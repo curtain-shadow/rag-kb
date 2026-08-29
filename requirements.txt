@@ -1,0 +1,21 @@
+# 深度RAG知识库 依赖清单
+# torch 需单独装 GPU 版：
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126
+torch>=2.13.0
+torchvision>=0.21.0
+fastapi
+uvicorn[standard]
+sse-starlette
+langchain
+langchain-openai
+langchain-community
+langchain-text-splitters
+FlagEmbedding
+sentence-transformers
+rank-bm25
+jieba
+pymupdf
+python-docx
+faiss-cpu
+pymilvus[milvus_lite]
+sqlalchemy
