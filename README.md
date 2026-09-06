@@ -63,6 +63,23 @@
 4. **为什么 Cross-Encoder 只重排 top-k，不能全库重排？**
    Cross-Encoder 把 query 与候选**拼接后一起进编码器**，是逐对 O(N) 推理，无法像双塔那样预编码后做 ANN 检索，全库 N 太大根本跑不动。所以它是「精排」，只对粗召回后的 top-k 候选做精排，双塔粗排 + Cross-Encoder 精排是工业标准组合。
 
+## 量化评估与消融实验（Hit Rate）
+
+自建 20 条**语义级** ground truth（每条标注一个能回答该问题的父块，不是关键词反查，避免偏向 BM25），在真实语料（简历信息库 56 子块 / 16 父块）上跑三组消融，度量父块级 Hit Rate@k：
+
+| 配置 | Hit@1 | Hit@3 | Hit@5 |
+|---|---|---|---|
+| **full（BM25 + 稠密 + RRF + 重排）** | **80.0%** | **100%** | **100%** |
+| no-rerank（BM25 + 稠密 + RRF） | 65.0% | 100% | 100% |
+| dense-only（仅稠密向量） | 70.0% | 95.0% | 95.0% |
+
+两条消融结论，直接给「为什么」补数据：
+
+1. **BM25 补召回**：dense-only 的 Hit@3 只有 95%（漏 1 条），加 BM25 后拉到 100%；但 Hit@1 反而从 70% 掉到 65%——BM25 的精确词匹配可能把错误父块顶到第 1，说明它「召回强、精度糙」。
+2. **重排提精度**：Cross-Encoder 精排把 Hit@1 从 65% 拉回 80%（高于两条单路），同时保住 100% 召回，印证「双塔粗排 + Cross-Encoder 精排」的工业组合。
+
+复现：`python scripts/eval_ablation.py`（加载 BGE-M3 + bge-reranker，约 1–2 分钟）。
+
 ## 目录结构
 
 ```
@@ -123,6 +140,8 @@ python scripts/week2_test_retrieval.py    # 混合检索 + RRF
 python scripts/week3_test_rag.py          # 重排 + 带引用生成
 python scripts/week4_test_stream.py       # 流式 + trace
 python scripts/week4_test_api.py          # 服务端到端（需先起服务）
+python scripts/week5_test_milvus.py       # Milvus 后端对比
+python scripts/eval_ablation.py           # 量化评估 + 消融（Hit Rate@k）
 ```
 
 ## 环境说明（D 盘 / 国内网络）
