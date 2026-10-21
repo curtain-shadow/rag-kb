@@ -72,11 +72,11 @@
 
 ## 进度
 
-- [x] Phase 1 端到端评测（2026-10-17：`scripts/eval_rag.py` + `data/eval_set.json` 30 条；忠实度 100% / 相关性 4.93/5 / 引用准确率 97.7%；检索 Hit@1 73.3%）
+- [x] Phase 1 端到端评测（2026-10-22：`scripts/eval_rag.py` + `data/eval_set.json` 200 条 × 3 runs；忠实度 99.8%±0.3% / 相关性 4.94/5 / 引用准确率 98.1%（795/810）/ 引用覆盖率 99.8%；检索 Hit@1 93.9% / Hit@3 99.5% / Hit@4 99.5%；3 条敏感条目跳过，有效 197 条）
 - [x] Phase 2 LoRA 微调（2026-10-20：`src/finetune/` + `scripts/train_lora.py` 完成；合成数据 294 条；3 epoch val_loss 0.3787→0.3582，adapter 存 `data/lora_qwen_rag`；四路对比评测完成，结论见下）
 - [x] Phase 3 部署（2026-10-20：llama.cpp + GGUF fp16 一键启动 `scripts/serve_local.bat`，OpenAI 兼容端点，70 tok/s；GGUF 忠实度 90.4% / 相关性 4.43 不损基座）
 
-### 四路生成后端对比结果（30 条，裁判=DeepSeek，检索/重排完全相同）
+### 四路生成后端对比结果（旧 30 条评测集，裁判=DeepSeek，检索/重排完全相同；200 条重跑待补）
 
 | 指标 | DeepSeek | Qwen-1.5B 基座 | Qwen-1.5B + LoRA | Qwen-1.5B GGUF(fp16) |
 |---|---|---|---|---|

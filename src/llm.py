@@ -21,11 +21,13 @@ class LLMClient(ABC):
     """统一 LLM 调用接口：chat 返回完整文本，chat_stream 逐段 yield 增量。"""
 
     @abstractmethod
-    def chat(self, messages: list[dict], temperature: float = 0.3, max_tokens: int = 1024) -> str:
+    def chat(self, messages: list[dict], temperature: float = 0.3, max_tokens: int = 1024,
+             seed: int | None = None) -> str:
         ...
 
     @abstractmethod
-    def chat_stream(self, messages: list[dict], temperature: float = 0.3, max_tokens: int = 1024):
+    def chat_stream(self, messages: list[dict], temperature: float = 0.3, max_tokens: int = 1024,
+                    seed: int | None = None):
         ...
 
 
@@ -39,23 +41,31 @@ class DeepSeekClient(LLMClient):
         )
         self.model = model or settings.deepseek_model
 
-    def chat(self, messages: list[dict], temperature: float = 0.3, max_tokens: int = 1024) -> str:
-        resp = self.client.chat.completions.create(
+    def chat(self, messages: list[dict], temperature: float = 0.3, max_tokens: int = 1024,
+             seed: int | None = None) -> str:
+        kwargs: dict = dict(
             model=self.model,
             messages=messages,
             temperature=temperature,
             max_tokens=max_tokens,
         )
+        if seed is not None:
+            kwargs["seed"] = seed
+        resp = self.client.chat.completions.create(**kwargs)
         return resp.choices[0].message.content
 
-    def chat_stream(self, messages: list[dict], temperature: float = 0.3, max_tokens: int = 1024):
-        resp = self.client.chat.completions.create(
+    def chat_stream(self, messages: list[dict], temperature: float = 0.3, max_tokens: int = 1024,
+                    seed: int | None = None):
+        kwargs: dict = dict(
             model=self.model,
             messages=messages,
             temperature=temperature,
             max_tokens=max_tokens,
             stream=True,
         )
+        if seed is not None:
+            kwargs["seed"] = seed
+        resp = self.client.chat.completions.create(**kwargs)
         for chunk in resp:
             if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
                 yield chunk.choices[0].delta.content
@@ -93,25 +103,30 @@ class LocalModelClient(LLMClient):
         text = self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
         return self.tokenizer(text, return_tensors="pt")
 
-    def chat(self, messages: list[dict], temperature: float = 0.3, max_tokens: int = 1024) -> str:
+    def chat(self, messages: list[dict], temperature: float = 0.3, max_tokens: int = 1024,
+             seed: int | None = None) -> str:
         import torch
 
         inputs = self._encode(messages)
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
+        gen_kwargs: dict = dict(
+            max_new_tokens=max_tokens,
+            do_sample=temperature > 0,
+            temperature=temperature if temperature > 0 else 1.0,
+            pad_token_id=self.tokenizer.eos_token_id,
+        )
+        # seed 仅在采样（do_sample=True）时生效，固定随机性让结果可复现
+        if seed is not None and temperature > 0:
+            gen_kwargs["generator"] = torch.Generator(device=self.device).manual_seed(seed)
         with torch.no_grad():
-            out = self.model.generate(
-                **inputs,
-                max_new_tokens=max_tokens,
-                do_sample=temperature > 0,
-                temperature=temperature if temperature > 0 else 1.0,
-                pad_token_id=self.tokenizer.eos_token_id,
-            )
+            out = self.model.generate(**inputs, **gen_kwargs)
         prompt_len = inputs["input_ids"].shape[1]
         return self.tokenizer.decode(out[0][prompt_len:], skip_special_tokens=True)
 
-    def chat_stream(self, messages: list[dict], temperature: float = 0.3, max_tokens: int = 1024):
+    def chat_stream(self, messages: list[dict], temperature: float = 0.3, max_tokens: int = 1024,
+                    seed: int | None = None):
         # 本地模型先做整段生成，逐段 yield（非逐 token，SSE 仍可复用；逐 token 留待后续 TextIteratorStreamer）
-        yield self.chat(messages, temperature=temperature, max_tokens=max_tokens)
+        yield self.chat(messages, temperature=temperature, max_tokens=max_tokens, seed=seed)
 
 
 class LocalOpenAIClient(DeepSeekClient):

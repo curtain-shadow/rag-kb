@@ -1,36 +1,1206 @@
 {
-  "corpus": "d:\\个人\\简历信息库.md",
-  "description": "端到端评测集：每条含 query / 参考答案 / gold 父块 index（按当前 20 父块切分手动核对）。用于 LLM-as-judge 三指标（忠实度/相关性/引用准确率）+ 检索 Hit Rate。",
+  "corpus": "D:\\profession\\rag_kb\\data\\docs\\wiki_zh_sample.md",
+  "description": "端到端评测集（中文维基语料，200 条）：每条含 query / 参考答案 / gold 父块 index。用于 LLM-as-judge 三指标（忠实度/相关性/引用准确率）+ 检索 Hit Rate。",
   "items": [
-    {"id": "q01", "query": "求职者是什么学校什么专业？", "reference_answer": "重庆邮电大学 · 人工智能学院 · 智能科学与技术专业，2027 届本科。", "gold_parent_index": 0},
-    {"id": "q02", "query": "求职者的求职意向是什么？", "reference_answer": "主投后端开发；另有前端 / 算法 / 机器学习 / CV / NLP / 数据挖掘 / 大模型 / 小程序等多方向广投。", "gold_parent_index": 0},
-    {"id": "q03", "query": "简历中 GPA 是否体现？", "reference_answer": "不体现 GPA（用户要求）。", "gold_parent_index": 0},
-    {"id": "q04", "query": "纹承堂用了什么后端框架？", "reference_answer": "Django + Django REST Framework（DRF）。", "gold_parent_index": 1},
-    {"id": "q05", "query": "纹承堂包含哪几个功能模块？", "reference_answer": "纹样分类、朝代时间线、关键词搜索、设计素材、社区问答五大模块。", "gold_parent_index": 1},
-    {"id": "q06", "query": "游戏采集工具打包了什么类型的游戏？", "reference_answer": "30 款网页游戏：10 H5 + 10 Flash + 10 Unity WebGL。", "gold_parent_index": 1},
-    {"id": "q07", "query": "恶意网络流量检测用了什么机器学习模型？", "reference_answer": "随机森林（RandomForest）与 XGBoost 对比，最终 XGBoost 更优。", "gold_parent_index": 2},
-    {"id": "q08", "query": "缺失视图聚类用了什么自监督方法？", "reference_answer": "SimCLR / NT-Xent 对比学习（自监督）。", "gold_parent_index": 2},
-    {"id": "q09", "query": "缺失视图聚类在 0% 缺失率下的 ACC 是多少？", "reference_answer": "完整训练 81.5%、缺失训练 93.7%，增益 +12.3%。", "gold_parent_index": 2},
-    {"id": "q10", "query": "跨模态语义聚类用了什么预训练模型？", "reference_answer": "CLIP（2021 年 OpenAI 多模态预训练模型）。", "gold_parent_index": 2},
-    {"id": "q11", "query": "智联AI赛用了什么前端技术栈？", "reference_answer": "React + Vite + TypeScript。", "gold_parent_index": 3},
-    {"id": "q12", "query": "MNIST 手写识别用了什么网络结构？", "reference_answer": "MLP（多层感知机），并含手动实现反向传播扩展。", "gold_parent_index": 3},
-    {"id": "q13", "query": "FPGA 分频器用什么硬件描述语言？", "reference_answer": "Verilog（Quartus II + ModelSim）。", "gold_parent_index": 3},
-    {"id": "q14", "query": "深度 RAG 项目用什么向量数据库？", "reference_answer": "faiss-cpu（HNSW ANN），可切换 Milvus，两后端 Top5 一致。", "gold_parent_index": 4},
-    {"id": "q15", "query": "深度 RAG 用了什么 embedding 模型？", "reference_answer": "BGE-M3（只加载 dense 头）。", "gold_parent_index": 4},
-    {"id": "q16", "query": "深度 RAG 检索侧 Hit@1 是多少？", "reference_answer": "full（混合+重排）配置 Hit@1 80%、Hit@3 100%。", "gold_parent_index": 4},
-    {"id": "q17", "query": "英语四级通过了吗？", "reference_answer": "已通过（英语四级）。", "gold_parent_index": 4},
-    {"id": "q18", "query": "蓝桥杯获了什么奖？", "reference_answer": "C++ 省赛 B 组三等奖。", "gold_parent_index": 4},
-    {"id": "q19", "query": "Java 秒杀系统待补项目是什么方向？", "reference_answer": "后端（电商秒杀、高并发）。", "gold_parent_index": 5},
-    {"id": "q20", "query": "推荐系统待补用什么做 CTR 预估？", "reference_answer": "DeepFM。", "gold_parent_index": 8},
-    {"id": "q21", "query": "推荐系统待补用什么数据集？", "reference_answer": "MovieLens 或电商行为数据。", "gold_parent_index": 8},
-    {"id": "q22", "query": "工业视觉检测待补检测什么？", "reference_answer": "面向金属切削等复杂工业环境的目标检测/识别与视觉测量（应对油污/水雾/切屑干扰）。", "gold_parent_index": 8},
-    {"id": "q23", "query": "Linux 内核模块待补做什么驱动？", "reference_answer": "字符设备驱动（procfs 文件 / 字符设备读写）。", "gold_parent_index": 10},
-    {"id": "q24", "query": "异步 FIFO 设计解决什么时序问题？", "reference_answer": "跨时钟域（CDC）与亚稳态问题。", "gold_parent_index": 11},
-    {"id": "q25", "query": "大数据平台待补用什么做实时计算？", "reference_answer": "PyFlink。", "gold_parent_index": 12},
-    {"id": "q26", "query": "建筑 AIGC 待补用什么生成图片？", "reference_answer": "Stable Diffusion（文生图，配 ControlNet / LoRA）。", "gold_parent_index": 13},
-    {"id": "q27", "query": "智能客服多智能体 Agent 用什么框架编排？", "reference_answer": "LangGraph（router→tools→generate 有状态工作流）。", "gold_parent_index": 14},
-    {"id": "q28", "query": "国密算法库实现包含哪几种算法？", "reference_answer": "SM2（椭圆曲线）、SM3（哈希）、SM4（对称）、RSA。", "gold_parent_index": 15},
-    {"id": "q29", "query": "C++ 高性能网络服务器用什么做多路复用？", "reference_answer": "epoll（LT/ET），配线程池与 Reactor 模型。", "gold_parent_index": 17},
-    {"id": "q30", "query": "端侧 AI 图像识别 App 用什么语言和推理引擎？", "reference_answer": "Kotlin（Android），ONNX Runtime / TensorFlow Lite 端侧推理。", "gold_parent_index": 17}
+    {
+      "id": "q001",
+      "query": "汉字表示的“数学”一词大约产生于哪个时期？",
+      "reference_answer": "汉字表示的“數學”一詞大約产生于中国宋元時期。",
+      "gold_parent_index": 0
+    },
+    {
+      "id": "q002",
+      "query": "希腊化哲学时期产生的学派有哪些？",
+      "reference_answer": "斯多葛学派、伊壁鸠鲁学派、怀疑主义派、新柏拉图派和新毕达哥拉斯主义。",
+      "gold_parent_index": 9
+    },
+    {
+      "id": "q003",
+      "query": "《中世纪伊斯兰哲学著作选》的编者是谁？",
+      "reference_answer": "Muhammad Ali Khalidi",
+      "gold_parent_index": 18
+    },
+    {
+      "id": "q004",
+      "query": "费尔南·布罗代尔通过使用哪些外部学科使历史学发生了革命性的变化？",
+      "reference_answer": "经济学、人类学和地理学",
+      "gold_parent_index": 27
+    },
+    {
+      "id": "q005",
+      "query": "《Is computer science science?》这篇文章的作者是谁，发表于何处？",
+      "reference_answer": "作者是 Peter J. Denning，发表于《Communications of the ACM》2005年4月。",
+      "gold_parent_index": 37
+    },
+    {
+      "id": "q006",
+      "query": "一部典型的好莱坞电影制作周期一般需要多长时间，各年份分别对应哪些制作步骤？",
+      "reference_answer": "一般一部电影会需要三年的时间：头一年是脚本发展，第二年是前期制作及电影制作，第三年是后期制作及电影发行。",
+      "gold_parent_index": 46
+    },
+    {
+      "id": "q007",
+      "query": "根據資料，短期和長期的分別構成了供給的什麼？",
+      "reference_answer": "供給的價格彈性，也就是供給面如何應對供給或需求方的更動而產生新的價格均衡點。",
+      "gold_parent_index": 55
+    },
+    {
+      "id": "q008",
+      "query": "芝加哥经济学派和货币主义挑战凯恩斯主义时，依据米尔顿·傅利曼等人的说法，市场经济在什么条件下可以自行调整供需？",
+      "reference_answer": "依据米尔顿·傅利曼等人的说法，市场经济在货币供给持平（亦即，没有过多的膨胀或紧缩）的条件下，可以自行调整供需。",
+      "gold_parent_index": 64
+    },
+    {
+      "id": "q009",
+      "query": "根据资料，经济法在传统法律分类中属于哪一类法律领域？",
+      "reference_answer": "经济法是传统上公法与私法之间的第三类法律领域。",
+      "gold_parent_index": 73
+    },
+    {
+      "id": "q010",
+      "query": "在19世纪，三大社会理论分别是什么？",
+      "reference_answer": "社会进化论、社会周期论和马克思主义的历史唯物主义。",
+      "gold_parent_index": 82
+    },
+    {
+      "id": "q011",
+      "query": "經典物理學的定律能夠準確描述哪類系統？",
+      "reference_answer": "經典物理學的定律能夠準確地描述長度超大於原子尺度、速度超小於光速的系統。",
+      "gold_parent_index": 92
+    },
+    {
+      "id": "q012",
+      "query": "LIGO在2015年9月14日探测到的历史上首个引力波信号源自什么？",
+      "reference_answer": "源自双黑洞。",
+      "gold_parent_index": 101
+    },
+    {
+      "id": "q013",
+      "query": "化学键的物理本质是什么？",
+      "reference_answer": "化学键的物理本质来自于粒子和粒子之间的静电力，量子力学上意指原子间电子的波函数线性叠加。",
+      "gold_parent_index": 110
+    },
+    {
+      "id": "q014",
+      "query": "气象学的中尺度（天气尺度）研究的水平尺度和时间尺度分别是多少？",
+      "reference_answer": "水平尺度100～2000公里，时间尺度一天到十几天。",
+      "gold_parent_index": 119
+    },
+    {
+      "id": "q015",
+      "query": "发展心理学主要研究人类意志在毕生当中的哪些发展现象？",
+      "reference_answer": "发展心理学着重于人类意志在毕生当中的发展过程，试图理解人们在世界中如何意识、理解、行动，并且研究这些现象是如何随着年龄而改变的；研究可能着重于认知、感情、道德、社交、神经的发展。",
+      "gold_parent_index": 128
+    },
+    {
+      "id": "q016",
+      "query": "世界上第一部法医学著作是什么？",
+      "reference_answer": "《洗冤集录》",
+      "gold_parent_index": 137
+    },
+    {
+      "id": "q017",
+      "query": "海洋化学研究的主要内容是什么？",
+      "reference_answer": "海洋化学是研究和了解海水特性及其变化的基础。",
+      "gold_parent_index": 146
+    },
+    {
+      "id": "q018",
+      "query": "畜牧业占农业总用地面积的比例是多少？",
+      "reference_answer": "畜牧业用地占农业总用地面积的70%。",
+      "gold_parent_index": 156
+    },
+    {
+      "id": "q019",
+      "query": "數學評論資料庫中論文和書籍的數量在2006年時已超過多少份？",
+      "reference_answer": "超過一百九十萬份",
+      "gold_parent_index": 1
+    },
+    {
+      "id": "q020",
+      "query": "中华人民共和国在哪些科技领域取得了显著成果？",
+      "reference_answer": "中华人民共和国在航空航天、高速铁路、复合材料、电子技术、核技术、替代能源、生物工程学等领域取得了许多成果。",
+      "gold_parent_index": 174
+    },
+    {
+      "id": "q021",
+      "query": "2010年北京市每名中学生的教育总支出是多少人民币？",
+      "reference_answer": "2010年，北京市投资的每人教育总额达人民币20,023元。",
+      "gold_parent_index": 183
+    },
+    {
+      "id": "q022",
+      "query": "Self语言是由谁在何时何地设计的？",
+      "reference_answer": "Self语言由David Ungar和Randy Smith最初于1986年在施乐帕罗奥多研究中心设计。",
+      "gold_parent_index": 192
+    },
+    {
+      "id": "q023",
+      "query": "Linux内核源代码的缺省编译器是什么？",
+      "reference_answer": "GCC是Linux内核源代码的缺省编译器。",
+      "gold_parent_index": 201
+    },
+    {
+      "id": "q024",
+      "query": "自由软件基金会是何时由谁建立的？",
+      "reference_answer": "自由软件基金会于1985年10月由理查德·斯托曼建立。",
+      "gold_parent_index": 210
+    },
+    {
+      "id": "q025",
+      "query": "孫中山在倫敦被清使館誘捕後，最終於哪一天恢復自由？",
+      "reference_answer": "1896年10月23日下午，清使館參贊馬格里帶着孫中山，在康德黎、英國外交部人員及喬福斯探長等面前宣布將他交給他們，孫中山當天下午恢復自由。",
+      "gold_parent_index": 220
+    },
+    {
+      "id": "q026",
+      "query": "孙中山于哪一年成立中国国民党？",
+      "reference_answer": "1919年10月10日，孙中山改组中华革命党，成立中国国民党。",
+      "gold_parent_index": 229
+    },
+    {
+      "id": "q027",
+      "query": "Windows NT 系統的架構中，硬體階層之上由微核心直接接觸的是什麼？",
+      "reference_answer": "硬體抽象層（HAL）",
+      "gold_parent_index": 238
+    },
+    {
+      "id": "q028",
+      "query": "在常用操作系统中，除了QNX和基于Mach的UNIX等个别系统外，几乎全部采用什么内核结构？",
+      "reference_answer": "单内核结构",
+      "gold_parent_index": 247
+    },
+    {
+      "id": "q029",
+      "query": "Linux的注册商标归谁所有？",
+      "reference_answer": "Linux的注册商标是Linus Torvalds所有的。",
+      "gold_parent_index": 256
+    },
+    {
+      "id": "q030",
+      "query": "最早的植物园是哪一年创建的？",
+      "reference_answer": "最早的植物园是于1545年创建的帕多瓦植物园。",
+      "gold_parent_index": 265
+    },
+    {
+      "id": "q031",
+      "query": "科学家通常认为生物体必须展现哪七个现象才能被视作生命？",
+      "reference_answer": "恆定性、組織性、新陳代謝、生長、適應、感應、繁殖。",
+      "gold_parent_index": 275
+    },
+    {
+      "id": "q032",
+      "query": "网络拓扑是什么，常见类型有哪些？",
+      "reference_answer": "网络拓扑是网络的几何形状分类。常见类型有：总线拓扑、星状拓扑、环状拓扑、网状拓扑、树状拓扑、混合式拓扑。",
+      "gold_parent_index": 284
+    },
+    {
+      "id": "q033",
+      "query": "上海合作组织是在何时正式成立的？",
+      "reference_answer": "2001年6月15日，6国元首举行首次会晤并签署《上海合作组织成立宣言》，上海合作组织正式成立。",
+      "gold_parent_index": 293
+    },
+    {
+      "id": "q034",
+      "query": "上海现行月最低工资标准是多少？",
+      "reference_answer": "上海市现行月最低工资标准是2190元，列全国首位。",
+      "gold_parent_index": 302
+    },
+    {
+      "id": "q035",
+      "query": "高德纳在哪一年获得图灵奖？",
+      "reference_answer": "1974年",
+      "gold_parent_index": 311
+    },
+    {
+      "id": "q036",
+      "query": "中国第一颗氢弹何时在何地成功引爆，爆炸威力相当于广岛原爆的多少倍？",
+      "reference_answer": "一九六七年六月十七日，中国的第一颗氢弹在罗布泊沙漠上空成功引爆，其爆炸威力相当于广岛原爆的三百八十五倍。",
+      "gold_parent_index": 320
+    },
+    {
+      "id": "q037",
+      "query": "人类利用指南针进行海上导航的最早文献记载出自哪本书？",
+      "reference_answer": "北宋朱彧在宣和元年（1119）所著的《萍洲可谈》。",
+      "gold_parent_index": 329
+    },
+    {
+      "id": "q038",
+      "query": "佛教的「四聖諦」學說包含哪四諦？",
+      "reference_answer": "苦諦、集諦、滅諦、道諦。",
+      "gold_parent_index": 339
+    },
+    {
+      "id": "q039",
+      "query": "五一六通知是在哪一年、由哪个会议通过的？",
+      "reference_answer": "1966年5月16日，中共中央政治局扩大会议通过了五一六通知。",
+      "gold_parent_index": 348
+    },
+    {
+      "id": "q040",
+      "query": "足球員蘇亞雷斯在2010至2014年世界盃期間因不君子行為受到哪些具體懲處？",
+      "reference_answer": "蘇亞雷斯因種族歧視黑人球員及3次賽中咬人，在沒有拿過一張紅牌的情況下共被禁賽48場，並付出超過20萬美元的罰款，同時對大眾產生負面形象。",
+      "gold_parent_index": 934
+    },
+    {
+      "id": "q041",
+      "query": "中国探月工程的「绕、落、回」任务包含哪些具体任务？",
+      "reference_answer": "包括2013年嫦娥三号搭载的玉兔号月球车成功登月，以及2020年嫦娥五号成功执行首次地外天体采样返回任务。",
+      "gold_parent_index": 366
+    },
+    {
+      "id": "q042",
+      "query": "台湾地区设置的自然生态保护区共有多少处，约占土地面积多少？",
+      "reference_answer": "共98处，约占总土地面积的19.18%。",
+      "gold_parent_index": 375
+    },
+    {
+      "id": "q043",
+      "query": "中華民國教育學制的架構是什麼？",
+      "reference_answer": "採「六、三、三、四」架構：國民小學6年、國民中學3年、高級中學3年、大學學士班4年；另有碩士班1年至4年、博士班2年至7年。",
+      "gold_parent_index": 384
+    },
+    {
+      "id": "q044",
+      "query": "兼併論在宗教對話中主張什麼？",
+      "reference_answer": "兼併論站在排他論與多元論之間，一方面認為上帝只得一個，另一方面把其他宗教視為「合法的宗教」，認為神給予各宗教救贖的啟示，只是其他宗教在接受神的恩典時夾雜著因文化差異而出現的偏差，所表達的並不如某一宗教般正統；其他宗教只是「無名的教徒」，接受了部分正確卻部分錯誤的觀念，正統的教徒要去糾正他們。",
+      "gold_parent_index": 393
+    },
+    {
+      "id": "q045",
+      "query": "广义的教育指的是什么？",
+      "reference_answer": "广义的教育泛指一切传播和学习人类文明成果，即各种知识、技能和社会生活经验，以促进个体社会化和个性化的社会实践活动，产生于人类社会初始阶段。",
+      "gold_parent_index": 403
+    },
+    {
+      "id": "q046",
+      "query": "貝爾實驗室在1939年製作出的第一個電子語音合成器叫什麼名字？",
+      "reference_answer": "VODER",
+      "gold_parent_index": 412
+    },
+    {
+      "id": "q047",
+      "query": "1941年4月日本与苏联签署了什么条约？",
+      "reference_answer": "《苏日中立条约》",
+      "gold_parent_index": 421
+    },
+    {
+      "id": "q048",
+      "query": "第二次世界大战造成的总伤亡人数估计大约是多少？其中士兵和平民各有多少？",
+      "reference_answer": "绝大多数资料估计大约有6,000万人在战争中丧生，其中包括约有2,000万名士兵和4,000万名平民。",
+      "gold_parent_index": 430
+    },
+    {
+      "id": "q049",
+      "query": "辽宁省的陆地面积大约是多少，占中国陆地面积的百分之几？",
+      "reference_answer": "辽宁省的陆地面积大约是14万平方公里，占中国陆地面积的1.5％。",
+      "gold_parent_index": 439
+    },
+    {
+      "id": "q050",
+      "query": "马来西亚华人公会的主席是谁？",
+      "reference_answer": "联邦交通部长拿督斯里魏家祥",
+      "gold_parent_index": 448
+    },
+    {
+      "id": "q051",
+      "query": "智能agent范式在哪个年代被广泛接受？",
+      "reference_answer": "1990年代",
+      "gold_parent_index": 458
+    },
+    {
+      "id": "q052",
+      "query": "世界旅游组织1980年会议上的马尼拉宣言认为旅游是什么？",
+      "reference_answer": "旅游是国民生活中一项必要的活动，因为它直接影响到社会、文化、教育、经济领域。",
+      "gold_parent_index": 467
+    },
+    {
+      "id": "q053",
+      "query": "鄧麗君在哪一年成為首位在拉斯維加斯凱撒皇宮大賭場簽約演唱的華籍女歌手？",
+      "reference_answer": "1983年",
+      "gold_parent_index": 476
+    },
+    {
+      "id": "q054",
+      "query": "代数数域的定义是什么？",
+      "reference_answer": "代数数域是数学中代数数论的基本概念，数域的一类，有时也被简称为数域，指有理数域的有限扩张形成的扩域。任何代数数域都可以视作上的有限维向量空间。",
+      "gold_parent_index": 485
+    },
+    {
+      "id": "q055",
+      "query": "第一次全国代表大会选举了哪三人组成中国共产党中央局？",
+      "reference_answer": "陈独秀、张国焘、李达",
+      "gold_parent_index": 494
+    },
+    {
+      "id": "q056",
+      "query": "中国共产党中央政治局常务委员会制度是在哪次全国代表大会上建立的？",
+      "reference_answer": "中国共产党中央政治局常务委员会制度是在1956年中国共产党第八次全国代表大会时建立的。",
+      "gold_parent_index": 503
+    },
+    {
+      "id": "q057",
+      "query": "2007年9月13日成立的國家預防腐敗局主要負責哪些工作？",
+      "reference_answer": "主要工作有反腐敗宣傳和教育、進行制度的建設、機制與體制的創新，以及在反腐敗案件上取得源頭性解決的工作。",
+      "gold_parent_index": 512
+    },
+    {
+      "id": "q058",
+      "query": "TeX 的数学公式自动间距调整功能有什么特点？",
+      "reference_answer": "TeX 排版数学公式时只提供一个间距调整引擎，实际的间距大小由数学字体提供；比如默认的 Computer Modern 字体提供了一套成熟的间距参数，可以直接使用。该功能源于高德纳研究高质量数学排版书籍后总结出的数学公式内部间距规则。",
+      "gold_parent_index": 522
+    },
+    {
+      "id": "q059",
+      "query": "阿尔巴尼亚的降水在季节分布上有什么特点？",
+      "reference_answer": "阿尔巴尼亚的降水量季节变化呈冬季多雨雪、夏季干燥少雨的型态，冬季降下全年约95%的雨或雪。",
+      "gold_parent_index": 531
+    },
+    {
+      "id": "q060",
+      "query": "阿尔巴尼亚最早的画作可追溯到什么时候？",
+      "reference_answer": "阿尔巴尼亚最早的画作可追溯到13世纪后期。",
+      "gold_parent_index": 540
+    },
+    {
+      "id": "q061",
+      "query": "人字洞遗址位于哪里？",
+      "reference_answer": "人字洞遗址位于繁昌县孙村镇癞痢山。",
+      "gold_parent_index": 549
+    },
+    {
+      "id": "q062",
+      "query": "甘肃省现辖多少个地级市和自治州？",
+      "reference_answer": "甘肃省现辖12个地级市、2个自治州。",
+      "gold_parent_index": 558
+    },
+    {
+      "id": "q063",
+      "query": "广东的饮食中，潮州菜和客家菜各有什么特点？",
+      "reference_answer": "廣東菜以原汁原味著称，潮州菜以精致典雅著称，客家菜则偏重咸。",
+      "gold_parent_index": 567
+    },
+    {
+      "id": "q064",
+      "query": "妥乐村古银杏的特点是什么？",
+      "reference_answer": "妥乐村拥有古银杏1200余株，胸径一般在50一150cm，最大220cm；一般树龄在300年以上，最长者为1200余年，树干高达几十米；是世界上古银杏生长密度最高、保存最完好的地方，被称为“世界古银杏之乡”。",
+      "gold_parent_index": 576
+    },
+    {
+      "id": "q065",
+      "query": "琼山是在哪一年被国务院批准为国家历史文化名城的？",
+      "reference_answer": "1994年1月4日",
+      "gold_parent_index": 586
+    },
+    {
+      "id": "q066",
+      "query": "黑龙江省的主要河流中，哪一条是黑龙江的第一大支流？",
+      "reference_answer": "松花江是黑龙江的第一大支流。",
+      "gold_parent_index": 595
+    },
+    {
+      "id": "q067",
+      "query": "河南省最北端和最南端分别位于哪里？",
+      "reference_answer": "最北端位于安阳市林州市任村镇，最南端位于信阳市商城县长竹园乡。",
+      "gold_parent_index": 604
+    },
+    {
+      "id": "q068",
+      "query": "湖北省在清代早期属于哪个省，省治在哪里？",
+      "reference_answer": "清代早期属于湖广省，省治武昌府。",
+      "gold_parent_index": 613
+    },
+    {
+      "id": "q069",
+      "query": "江苏省的地形有什么特点？",
+      "reference_answer": "江苏省基本上由长江和淮河下游的大片冲积平原组成，全省地势总体上相当低平，是中国地势最为低平的一个省份。平原面积约7万平方公里，占全省面积的69%；丘陵和低山仅孤立地散落于西南部、东北角连云港附近及太湖附近，低山和丘陵岗地占14.3%，水面占16.8%。",
+      "gold_parent_index": 622
+    },
+    {
+      "id": "q070",
+      "query": "明清时期江西的“江右”商帮在全国十大商帮中位列第几？",
+      "reference_answer": "第三",
+      "gold_parent_index": 631
+    },
+    {
+      "id": "q071",
+      "query": "2020年吉林省常住人口中，朝鲜族人口与2010年相比减少了多少人？",
+      "reference_answer": "朝鲜族人口减少100,002人。",
+      "gold_parent_index": 641
+    },
+    {
+      "id": "q072",
+      "query": "北魏是哪一年由谁建立的，都城设在哪里？",
+      "reference_answer": "北魏于386年由鲜卑族拓跋珪建立，在平城（今大同）建都。",
+      "gold_parent_index": 650
+    },
+    {
+      "id": "q073",
+      "query": "清朝时山东省下设哪三道？",
+      "reference_answer": "济东泰武临道、兖沂曹济道和登莱青胶道。",
+      "gold_parent_index": 659
+    },
+    {
+      "id": "q074",
+      "query": "截至2016年，山东省共有多少所高校具有普通高等学历教育招生资格？其中包含哪些类型？",
+      "reference_answer": "截至2016年，山东省共有141所高校具有普通高等学历教育招生资格，包含67所普通本科高校，73所高职(专科)院校和1所分校办学点。",
+      "gold_parent_index": 668
+    },
+    {
+      "id": "q075",
+      "query": "四川境内已被命名的旧石器时代文化遗址共有多少处？",
+      "reference_answer": "4处",
+      "gold_parent_index": 677
+    },
+    {
+      "id": "q076",
+      "query": "四川地区在婚庆、寿庆、生子、丧葬等重大事件时流行摆设什么宴席？",
+      "reference_answer": "九大碗宴席",
+      "gold_parent_index": 686
+    },
+    {
+      "id": "q077",
+      "query": "云南省可统计的基督新教信众约有多少人？合法宗教场所多少处？",
+      "reference_answer": "云南省可统计的参加官方教会的基督新教信众约53万余人，合法宗教场所2050处。",
+      "gold_parent_index": 695
+    },
+    {
+      "id": "q078",
+      "query": "浙江省沿海共有多少个岛屿？",
+      "reference_answer": "浙江省沿海共有2161个岛屿。",
+      "gold_parent_index": 705
+    },
+    {
+      "id": "q079",
+      "query": "浙江的民营经济在省外创造了多少销售额？",
+      "reference_answer": "500万省外浙商通过5000多个浙商市场在全国各地创造的销售额超过6000亿元。",
+      "gold_parent_index": 714
+    },
+    {
+      "id": "q080",
+      "query": "壮语属于哪个语族？",
+      "reference_answer": "壮语属于壮泰语族。",
+      "gold_parent_index": 723
+    },
+    {
+      "id": "q081",
+      "query": "秦始皇为巩固北方边疆，采取了哪些措施来防御匈奴并开发北部边地？",
+      "reference_answer": "秦始皇令蒙恬率三十万兵士驻屯上郡；大规模派遣犯人到北部边境，利用战国时代燕、赵、秦国修筑的长城，修起西起临洮、东至辽东的长城，并在长城沿线修筑城障、烽火台等军事设施；在北部新征服的地域内设置郡县，修筑县城，派遣犯人垦种，后来也从中原迁移民户来边地耕种，实施奖励垦种的政策；修筑南起云阳、北达九原的秦直道及其他道路。",
+      "gold_parent_index": 732
+    },
+    {
+      "id": "q082",
+      "query": "1934年4月在百灵庙成立的蒙古地方自治政务委员会的委员长是谁？",
+      "reference_answer": "云王（云端旺楚克）",
+      "gold_parent_index": 741
+    },
+    {
+      "id": "q083",
+      "query": "内蒙古自治区从1978年到2017年地区生产总值年均增长率是多少？",
+      "reference_answer": "11.7%",
+      "gold_parent_index": 750
+    },
+    {
+      "id": "q084",
+      "query": "蒙古族白食的原料主要是什么？",
+      "reference_answer": "白食的原料多为牛奶，有时也用羊奶、马乳、骆驼奶。",
+      "gold_parent_index": 760
+    },
+    {
+      "id": "q085",
+      "query": "民国十七年（1928年）10月17日，民国中央政府决议将哪些地区和辖地合并建为宁夏省？",
+      "reference_answer": "将宁夏道（即朔方道）旧属八县（即宁夏县、宁朔县、平罗县、中卫县、灵武县、金积县、盐池县和平远县）和宁夏护军使辖地（即阿拉善厄鲁特旗和额济纳土尔扈特旗，今内蒙古阿拉善盟阿拉善旗、额济纳旗）合并建为宁夏省。",
+      "gold_parent_index": 769
+    },
+    {
+      "id": "q086",
+      "query": "清朝乾隆帝在哪一年平定大小和卓之乱并统一天山南北？",
+      "reference_answer": "1759年（乾隆二十四年）。",
+      "gold_parent_index": 778
+    },
+    {
+      "id": "q087",
+      "query": "金朝哪一年正式迁都于北京，这是北京历史上第一次成为中国的首都？",
+      "reference_answer": "金朝贞元元年（1153年），完颜亮正式迁都于北京，改燕京为圣都，不久又称中都大兴府，这是北京历史上第一次成为中国的首都。",
+      "gold_parent_index": 787
+    },
+    {
+      "id": "q088",
+      "query": "2019年1月11日，北京市人民政府机关与哪些机构一同搬迁至北京城市副中心行政办公区新址？",
+      "reference_answer": "中共北京市委、北京市人大常委会、政协北京市委员会",
+      "gold_parent_index": 796
+    },
+    {
+      "id": "q089",
+      "query": "重庆市的名称有哪三种解释？",
+      "reference_answer": "关于重庆得名有三种解释：一是宋光宗藩封在恭州，是一庆，后又由恭州承嗣天子大位，这是二庆，故名“重庆”；二是宋光宗即位时，其祖母宪圣慈烈皇后尚在，称寿圣皇太后，其父亲孝宗称太上皇，这二位均临视了光宗的登基庆典，故曰“重庆”；三是明代《蜀中广记·郡县古今通释·重庆府》所载：“重庆者，以其介绍、顺二庆之间也”，即因重庆之南为绍庆府，之北为顺庆府，重庆介乎其间，所以称“重庆”。",
+      "gold_parent_index": 805
+    },
+    {
+      "id": "q090",
+      "query": "重庆人口最多的首十个姓氏依次是什么？",
+      "reference_answer": "李、张、陈、刘、王、杨、周、黄、吴、罗。",
+      "gold_parent_index": 814
+    },
+    {
+      "id": "q091",
+      "query": "天津名称的历史由来主要有哪几种说法？",
+      "reference_answer": "主要有四种说法：诗词之说（“天津”一词最早出现于屈原《离骚》）、星官之说（来源于星官名“天津星”）、河名之说（源自河名“天津河”）、赐名之说（明成祖朱棣赐名“天津”，意为“天子津渡”）。",
+      "gold_parent_index": 824
+    },
+    {
+      "id": "q092",
+      "query": "天津时调、天津快板、京东大鼓、京韵大鼓、快板书等曲艺形式是在哪里形成的？",
+      "reference_answer": "天津",
+      "gold_parent_index": 833
+    },
+    {
+      "id": "q093",
+      "query": "中国行政区划制度萌芽发展于哪个历史时期？",
+      "reference_answer": "真正的行政区划制度萌芽发展于东周春秋时期。",
+      "gold_parent_index": 842
+    },
+    {
+      "id": "q094",
+      "query": "亚洲地形有哪些主要特点？",
+      "reference_answer": "亚洲地形的主要特点有三：一是地面起伏大，高低悬殊；二是地势中部高，四周低；三是发生於第三纪的造山运动对亚洲地形影响深远，形成东亚岛弧、青藏高原等。",
+      "gold_parent_index": 851
+    },
+    {
+      "id": "q095",
+      "query": "美国在1803年从法国购买的路易斯安娜购地面积是多少平方公里？",
+      "reference_answer": "2,144,476平方公里",
+      "gold_parent_index": 860
+    },
+    {
+      "id": "q096",
+      "query": "美国最大的三个国际货物港口分别是哪些？",
+      "reference_answer": "纽约港、休士顿港和洛杉矶港（长滩港）。",
+      "gold_parent_index": 869
+    },
+    {
+      "id": "q097",
+      "query": "美國軍隊分為哪五個軍種？",
+      "reference_answer": "美國軍隊分為五個軍種：陸軍、海軍、空軍、海軍陸戰隊和海岸警衛隊。其中陸軍、海軍、空軍、海軍陸戰隊由國防部管理，海岸警衛隊由國土安全部管理。",
+      "gold_parent_index": 878
+    },
+    {
+      "id": "q098",
+      "query": "2015年11月30日国际货币基金组织宣布人民币加入特别提款权货币篮子后，SDR货币篮子包含哪五种货币及其权重分别是多少？",
+      "reference_answer": "SDR货币篮子将包括美元、欧元、人民币、日元和英镑五种货币，其权重将分别为41.73%、30.93%、10.92%、8.33%和8.09%。",
+      "gold_parent_index": 888
+    },
+    {
+      "id": "q099",
+      "query": "新儒学从戊戌变法到五四运动这一阶段的主要表现是什么？",
+      "reference_answer": "这一阶段主要表现为孙文的籍古创制，孙文在学习西方民主经验和思考西方弊政的基础上，仿慕儒家体制创立了政权与治权分立的民权学说和五权分立的政体学说。",
+      "gold_parent_index": 897
+    },
+    {
+      "id": "q100",
+      "query": "深圳2016年金融业增加值占同期全市GDP的比例是多少？",
+      "reference_answer": "14.8%",
+      "gold_parent_index": 906
+    },
+    {
+      "id": "q101",
+      "query": "深圳报业集团旗下包括哪些报纸和杂志期刊？",
+      "reference_answer": "深圳报业集团旗下媒体包括《深圳特区报》、《深圳商报》、《香港商报》、《晶报》、《Shenzhen Daily》及《宝安日报》等报纸；杂志期刊有《汽车导报》、《游遍天下》、《特区教育》和《本色生活》等。",
+      "gold_parent_index": 915
+    },
+    {
+      "id": "q102",
+      "query": "王菲的單曲《Eyes on Me》在Oricon公信榜國際單曲榜上連續多少週排行第一？",
+      "reference_answer": "連續19週排行第一，一共佔據榜首21週。",
+      "gold_parent_index": 924
+    },
+    {
+      "id": "q103",
+      "query": "国际体育联合会认为一个体育运动应当符合哪些条件？",
+      "reference_answer": "国际体育联合会认为，一个体育运动应当符合以下条件：有竞争要素；对于生命体无伤害；不依赖于某一单一体育器材提供商（不含室内美式足球这样有规则专利的运动）；并不包含刻意为比赛设计的运气成分因素。",
+      "gold_parent_index": 933
+    },
+    {
+      "id": "q104",
+      "query": "抚顺城得名于何时，其含义是什么？",
+      "reference_answer": "抚顺城得名始于1384年（明洪武十七年）修筑的明代抚顺城，其意是“抚绥边疆，顺导夷民”。",
+      "gold_parent_index": 943
+    },
+    {
+      "id": "q105",
+      "query": "逻辑推理通常可分为哪三种类型？",
+      "reference_answer": "歸納推理、溯因推理和演繹推理。",
+      "gold_parent_index": 952
+    },
+    {
+      "id": "q106",
+      "query": "东北铁路网在满洲国时期是如何形成的？",
+      "reference_answer": "满洲国时期，日本殖民者扩充了铁路网络，成为今日东北铁路网之模样。",
+      "gold_parent_index": 961
+    },
+    {
+      "id": "q107",
+      "query": "俄罗斯正教会的最高权力属于什么机构？",
+      "reference_answer": "俄罗斯正教会的最高权力属于主教公会。",
+      "gold_parent_index": 970
+    },
+    {
+      "id": "q108",
+      "query": "朱德的原配夫人刘从珍何时与朱德完婚？",
+      "reference_answer": "1905年9月",
+      "gold_parent_index": 979
+    },
+    {
+      "id": "q109",
+      "query": "根据TIOBE指数在2022年3月，十大最受欢迎的编程语言包含哪些？",
+      "reference_answer": "Python、Visual Basic .NET、C、C++、C#、Java、JavaScript、PHP、Assembly language及SQL。",
+      "gold_parent_index": 988
+    },
+    {
+      "id": "q110",
+      "query": "紐西蘭的首都是哪個城市？",
+      "reference_answer": "惠灵顿",
+      "gold_parent_index": 997
+    },
+    {
+      "id": "q111",
+      "query": "维基百科中的仲裁委员会通常会对争议案件采取哪些处理方式？",
+      "reference_answer": "仲裁委员会的处理方式包括：提出警告并暂缓执行惩处（63.2％）、禁止编辑文章（43.3％）、禁止参与主题讨论（23.4％）或者禁止浏览维基百科（15.7％）。其中完全禁止使用维基百科主要是针对确认假冒他人行为或出现反社会行为的用户；如果用户的不当行为仅是违反社群共识或编辑政策，仲裁委员会往往会发出警告来处理。",
+      "gold_parent_index": 1007
+    },
+    {
+      "id": "q112",
+      "query": "尼古拉斯·卡尔在2005年撰写的《Web 2.0的反思》中批评了什么？",
+      "reference_answer": "尼古拉斯·卡尔在《Web 2.0的反思》中批评随着Web 2.0大力发展，包括维基百科在内由用户自行创作内容的网站可能取代更为专业的内容产业出版者，因为“任何时候免费都胜过品质”；他还说：“在令人狂喜的Web 2.0梦想中隐藏的是业余人士占有主导权，我想像不出有什么东西比这更可怕的。”",
+      "gold_parent_index": 1016
+    },
+    {
+      "id": "q113",
+      "query": "在汉字文化圈中，日语和朝鲜语对法国的汉字表记形式是什么？",
+      "reference_answer": "日语和朝鲜语中沿用“佛蘭西”的表记（日语：；朝鲜语：），简称佛国（；）。",
+      "gold_parent_index": 1025
+    },
+    {
+      "id": "q114",
+      "query": "法国在2004年和2010年分别通过了哪些涉及宗教象征物的法律？",
+      "reference_answer": "2004年法律禁止在学校穿戴宗教象征物；2010年法律禁止在公共场合佩戴伊斯兰面纱。",
+      "gold_parent_index": 1034
+    },
+    {
+      "id": "q115",
+      "query": "法国的高等院校分为哪两类？",
+      "reference_answer": "法国的高等院校分为大学校（grande école）和大学（université）两类。",
+      "gold_parent_index": 1043
+    },
+    {
+      "id": "q116",
+      "query": "法国国家橄榄球队在六国锦标赛中夺冠多少次？",
+      "reference_answer": "16届六国锦标赛冠军，夺得过8次。",
+      "gold_parent_index": 1052
+    },
+    {
+      "id": "q117",
+      "query": "根据国旗下半旗实施办法，下半旗时应先将国旗升至何处，再下降至什么位置？",
+      "reference_answer": "下半旗时，应先将国旗升至杆顶，再下降至旗身横长二分之一处；降旗时，仍应升至杆顶，再行下降。",
+      "gold_parent_index": 1061
+    },
+    {
+      "id": "q118",
+      "query": "泰勒斯被后人誉为什么？",
+      "reference_answer": "科学和哲学之父",
+      "gold_parent_index": 1071
+    },
+    {
+      "id": "q119",
+      "query": "于格·卡佩是在哪一年通过兰斯集会中的选举成为法兰西国王的？",
+      "reference_answer": "987年",
+      "gold_parent_index": 1080
+    },
+    {
+      "id": "q120",
+      "query": "2013年香港大学医学院传染病学教授袁国勇认为SARS病毒的天然宿主是什么？",
+      "reference_answer": "中华菊头蝠",
+      "gold_parent_index": 1089
+    },
+    {
+      "id": "q121",
+      "query": "香港媒體第一次正式報導維基百科是什麼時候？",
+      "reference_answer": "2006年2月20日，《明報》於副刊發表《生活百科：Wiki世界 自由開放》，這是香港媒體第一次正式報導維基百科。",
+      "gold_parent_index": 1098
+    },
+    {
+      "id": "q122",
+      "query": "联军何时占领巴格达并结束萨达姆的独裁统治？",
+      "reference_answer": "联军在4月9日占领巴格达，结束了萨达姆24年来的独裁统治。",
+      "gold_parent_index": 1107
+    },
+    {
+      "id": "q123",
+      "query": "忽必烈在哪一年将汉语国号“大蒙古国”改为“大元”？",
+      "reference_answer": "1271年",
+      "gold_parent_index": 1116
+    },
+    {
+      "id": "q124",
+      "query": "张国荣在1989年宣布退出乐坛前，在香港红磡体育馆举行了多少场告别乐坛演唱会？",
+      "reference_answer": "33场",
+      "gold_parent_index": 1126
+    },
+    {
+      "id": "q125",
+      "query": "香港电影制作人黄百鸣如何描述张国荣对身边人的帮助？",
+      "reference_answer": "黄百鸣说张国荣会帮演技生疏的演员对戏，讲笑话让心情不好的同事开心，为患病的工作人员安排医生，给生活困窘的临时演员找工作。",
+      "gold_parent_index": 1135
+    },
+    {
+      "id": "q126",
+      "query": "施莱尔马赫将柏拉图的对话录区分为了哪三个时期？",
+      "reference_answer": "施莱尔马赫将对话录区分为：奠基期、转变期、巅峰期。",
+      "gold_parent_index": 1144
+    },
+    {
+      "id": "q127",
+      "query": "《帝国杂志》给这部电影打了几颗星，并如何评价它的视觉效果？",
+      "reference_answer": "《帝国杂志》给予电影四颗星（五颗星满分），认为画面和视觉效果极为华丽。",
+      "gold_parent_index": 1153
+    },
+    {
+      "id": "q128",
+      "query": "合肥市第七次全国人口普查的常住人口是多少？",
+      "reference_answer": "9,369,881人",
+      "gold_parent_index": 1162
+    },
+    {
+      "id": "q129",
+      "query": "GPL的文案本身是否受GPL授权条款约束？",
+      "reference_answer": "GPL的文案本身受版权保护，版权由自由软件基金会持有，但GPL的文案本身不在GPL之下。",
+      "gold_parent_index": 1171
+    },
+    {
+      "id": "q130",
+      "query": "弗雷泽·斯托达特是什么领域的先驱？",
+      "reference_answer": "弗雷泽·斯托达特是結合力（mechanical bond）範籌的先驱。",
+      "gold_parent_index": 1180
+    },
+    {
+      "id": "q131",
+      "query": "亚里士多德将哲学分为哪几类？",
+      "reference_answer": "亚里士多德将哲学分为：理论的科学（数学、自然科学和后来被称为形而上学的第一哲学）、实践的科学（伦理学、政治学、经济学、战略学）、创造的科学（即诗学、修辞学）。",
+      "gold_parent_index": 1190
+    },
+    {
+      "id": "q132",
+      "query": "《修辞学》在资料中的拉丁文标题是什么？",
+      "reference_answer": "《修辞学》的拉丁文标题是 Ars Rhetorica。",
+      "gold_parent_index": 1199
+    },
+    {
+      "id": "q133",
+      "query": "注音文為什麼會在台灣的網路交談中流行？",
+      "reference_answer": "因為這類網路服務通常強調即時對話，快速輸入文字相對重要，而中文字同音字太多，常碰到選字問題造成時間延遲；在爭取時間的前提下，網友只輸入第一個聲母（或韻母）後選擇輸出，以ㄣ、ㄛ、ㄟ、ㄇ等注音符號代替嗯、哦、欸（誒）、嗎等語氣詞。",
+      "gold_parent_index": 1208
+    },
+    {
+      "id": "q134",
+      "query": "牛李党争结束于哪一年？",
+      "reference_answer": "846年",
+      "gold_parent_index": 1217
+    },
+    {
+      "id": "q135",
+      "query": "府兵制的主要缺点有哪些？",
+      "reference_answer": "府兵制的主要缺点在于动员速度慢，用兵时间过长会影响农业，而且免除士兵的税赋对朝廷收入也是一个损失。",
+      "gold_parent_index": 1226
+    },
+    {
+      "id": "q136",
+      "query": "西藏佛教传说中，西藏民族是由哪六个最原始的氏族繁衍而来的？",
+      "reference_answer": "噶、哲、扎、党、訥沃、韋達。",
+      "gold_parent_index": 1235
+    },
+    {
+      "id": "q137",
+      "query": "清廷在哪一年將臺灣升格設立為臺灣省？",
+      "reference_answer": "1885年",
+      "gold_parent_index": 1245
+    },
+    {
+      "id": "q138",
+      "query": "根據資料，中華民國總統的任期是幾年，是否可以連任？",
+      "reference_answer": "中華民國總統任期4年，可連選連任一次。",
+      "gold_parent_index": 1254
+    },
+    {
+      "id": "q139",
+      "query": "台湾在戒严时期的文化呈现哪些特质？",
+      "reference_answer": "文化呈现反共、传统、一元的特质。",
+      "gold_parent_index": 1263
+    },
+    {
+      "id": "q140",
+      "query": "鲁迅在哪一年搬至上海，直至去世？",
+      "reference_answer": "1927年10月",
+      "gold_parent_index": 1272
+    },
+    {
+      "id": "q141",
+      "query": "鲁迅在延安创办的文学院最初取什么名字？",
+      "reference_answer": "鲁迅文学院",
+      "gold_parent_index": 1281
+    },
+    {
+      "id": "q142",
+      "query": "踏板式摩托车最大的特点是什么？",
+      "reference_answer": "最大的特点是使用自动档，传动系统通常为无段自动变速器（CVT）。",
+      "gold_parent_index": 1290
+    },
+    {
+      "id": "q143",
+      "query": "國立臺灣師範大學圖書館的前身是什麼？",
+      "reference_answer": "臺灣總督府臺北高等學校圖書館。",
+      "gold_parent_index": 1299
+    },
+    {
+      "id": "q144",
+      "query": "大同區的區花是什麼？",
+      "reference_answer": "茶花",
+      "gold_parent_index": 1309
+    },
+    {
+      "id": "q145",
+      "query": "臺北市信義區2022年底人口最多與最少的里分別是哪兩個里？",
+      "reference_answer": "人口最多與最少的里分別是安康里與黎安里。",
+      "gold_parent_index": 1318
+    },
+    {
+      "id": "q146",
+      "query": "紫藤廬是哪一年建立的？",
+      "reference_answer": "紫藤廬建立於1920年。",
+      "gold_parent_index": 1327
+    },
+    {
+      "id": "q147",
+      "query": "北投為什麼被認為是台灣籃球運動興盛的起點？",
+      "reference_answer": "1951年台灣在北投誕生了第一座夜間照明的露天球場——七虎球場，看台為北投唭哩岸石所構造，是當時亞洲的先進球場，多次舉辦國際比賽，創造了1950至1970年代全台籃球黃金盛世，全台男女籃球盡源於此。",
+      "gold_parent_index": 1336
+    },
+    {
+      "id": "q148",
+      "query": "李筱峰在1992年祝賀外省人臺灣獨立協進會成立時，對過去的臺獨運動提出了什麼批評？",
+      "reference_answer": "李筱峰表示，過去的臺獨運動有著極強烈的鶴佬人（閩南後裔）的沙文主義傾向，往往以鶴佬話作為「臺灣話」的專利，並以此作為「臺灣人」的符號；為了反抗國民黨過去對母語的歧視，他們往往矯枉過正，獨尊鶴佬話為臺灣話的正統。",
+      "gold_parent_index": 1345
+    },
+    {
+      "id": "q149",
+      "query": "教育部與文化部合作的「106閩南語卡通、動畫字幕製作及配音工作計畫」在2018年完成了哪5部卡通的配音？",
+      "reference_answer": "2018年共完成5部取得授權之國內外卡通：「」、「」、「櫻桃小丸子」、「九藏貓窩」及「卡滋幫」。",
+      "gold_parent_index": 1354
+    },
+    {
+      "id": "q150",
+      "query": "司马迁撰写《史记》的撰述动机主要有哪三方面？",
+      "reference_answer": "主要有三方面：一是继承其父司马谈编订史书的遗志，完成撰述《史记》的宏愿；二是继承《春秋》精神，秉承《春秋》褒贬精神撰述《史记》；三是肩负史家职责，完成太史令的责任并尽史学家的职责。",
+      "gold_parent_index": 1363
+    },
+    {
+      "id": "q151",
+      "query": "2006年舉辦的第一屆臺灣原住民族生物學誌研討會揭櫫哪三個面向？",
+      "reference_answer": "「原住民族生物學誌通論」、「臺灣原住民的動物利用」與「臺灣原住民族的植物利用」三個面向。",
+      "gold_parent_index": 1373
+    },
+    {
+      "id": "q152",
+      "query": "昆明市在2008年获得了哪些投资城市称号？",
+      "reference_answer": "2008年昆明获得“全国十大浙商最佳投资城市”称号，并与成都、大连、包头、广州一起荣获“2008中国制造业最佳投资城市”称号。",
+      "gold_parent_index": 1382
+    },
+    {
+      "id": "q153",
+      "query": "白族的本主教中，“本主”一词的含义是什么？",
+      "reference_answer": "“本主”一词的含义是“本境土主”。",
+      "gold_parent_index": 1391
+    },
+    {
+      "id": "q154",
+      "query": "佛教宇宙观中，一千个小世界、一千个小千世界、一千个中千世界合称为什么？",
+      "reference_answer": "三千大千世界",
+      "gold_parent_index": 1400
+    },
+    {
+      "id": "q155",
+      "query": "韩愈为什么上书《论佛骨表》？",
+      "reference_answer": "韩愈感觉到佛教普及后对中国社会、经济、文化、政治各方面造成影响，认为重症应下猛药医，不先从佛教教义上解决思想问题，而以外在手段解决，因此上书《论佛骨表》（《谏迎佛骨表》）。",
+      "gold_parent_index": 1409
+    },
+    {
+      "id": "q156",
+      "query": "袁世凯因出身河南项城而被称作哪些称号？",
+      "reference_answer": "袁宫保、袁大帅、袁项城",
+      "gold_parent_index": 1418
+    },
+    {
+      "id": "q157",
+      "query": "1913年7月12日，谁宣布独立组织讨袁军，从而引发了“二次革命”？",
+      "reference_answer": "李烈钧",
+      "gold_parent_index": 1428
+    },
+    {
+      "id": "q158",
+      "query": "袁世凯的第六妾叶蓁来自哪里？",
+      "reference_answer": "南京人",
+      "gold_parent_index": 1437
+    },
+    {
+      "id": "q159",
+      "query": "朱熹最终确定的四书阅读顺序是什么？",
+      "reference_answer": "《大學》《中庸》《论语》和《孟子》。",
+      "gold_parent_index": 1446
+    },
+    {
+      "id": "q160",
+      "query": "臺灣總督府中央研究所衛生部在1939年中央研究所廢止後劃入哪裡，改稱為什麼？",
+      "reference_answer": "衛生部劃入臺北帝國大學，改稱「熱帶醫學研究所」。",
+      "gold_parent_index": 1455
+    },
+    {
+      "id": "q161",
+      "query": "陳文成事件紀念廣場是何時啟用的？",
+      "reference_answer": "2021年2月2日",
+      "gold_parent_index": 1464
+    },
+    {
+      "id": "q162",
+      "query": "中国第一枚试验探空火箭在哪里发射成功？",
+      "reference_answer": "上海南匯县",
+      "gold_parent_index": 1473
+    },
+    {
+      "id": "q163",
+      "query": "《黃帝陰符經疏·序》中記載李荃在哪裡得到《陰符經》？",
+      "reference_answer": "李荃在《黃帝陰符經疏·序》中自稱得《陰符經》於嵩山虎口岩石壁。",
+      "gold_parent_index": 1820
+    },
+    {
+      "id": "q164",
+      "query": "GTK 2.0版正式发布的日期是什么？",
+      "reference_answer": "2002年3月11日",
+      "gold_parent_index": 1492
+    },
+    {
+      "id": "q165",
+      "query": "五代十國時期，吳越國與閩南清源軍何時納土歸順宋朝？",
+      "reference_answer": "978年，錢俶與陳洪進納土歸順宋朝，吳越國與閩南清源軍亡。",
+      "gold_parent_index": 1501
+    },
+    {
+      "id": "q166",
+      "query": "五代十国时期词的发展中，花间派起源于哪些词人？",
+      "reference_answer": "花间派起源于晚唐温庭筠和晚唐前蜀的韦庄。",
+      "gold_parent_index": 1510
+    },
+    {
+      "id": "q167",
+      "query": "海上之盟是北宋与金朝在何时签订的？",
+      "reference_answer": "重和元年（1118年）春。",
+      "gold_parent_index": 1519
+    },
+    {
+      "id": "q168",
+      "query": "北宋文官官阶中的“本官”或“正官”具有什么特点？",
+      "reference_answer": "北宋初期至中期用唐朝中央政府的三省六部、九寺五院等官司之正副官组合而成文官官阶，称为“本官”或“正官”，虽具官名，但无实职，只用以定品秩、俸禄、章服和序迁，因此又称为“阶官”或“寄禄官”；领有本官者位高称“朝官”，位卑称“京官”。",
+      "gold_parent_index": 1528
+    },
+    {
+      "id": "q169",
+      "query": "宋朝的商税主要包括哪两种？各自的税率是多少？",
+      "reference_answer": "宋商税主要有住税和过税。住税即买卖交易税，税率3％；过税即商品流通税，税率2％。",
+      "gold_parent_index": 1537
+    },
+    {
+      "id": "q170",
+      "query": "忽必烈在哪一年公布《建国号诏》并建立汉语国号为大元？",
+      "reference_answer": "至元八年（1271年）。",
+      "gold_parent_index": 1546
+    },
+    {
+      "id": "q171",
+      "query": "元朝在元英宗时期共设置了多少个行省？",
+      "reference_answer": "1321年元英宗时期共设置了十一个行省（包含在藩属国高丽设置的征东行省）。",
+      "gold_parent_index": 1556
+    },
+    {
+      "id": "q172",
+      "query": "元朝时期茶叶、棉花与甘蔗被称为什么？",
+      "reference_answer": "茶叶、棉花与甘蔗成为元朝当时重要的三大经济作物。",
+      "gold_parent_index": 1565
+    },
+    {
+      "id": "q173",
+      "query": "元朝的驿路分为哪三种？",
+      "reference_answer": "元朝的驿路分为三种：一称帖里干道（蒙古语意为车道），二称木怜道（蒙古语意为马道），三为纳怜道（蒙古语意为小道）。",
+      "gold_parent_index": 1574
+    },
+    {
+      "id": "q174",
+      "query": "李敖在2006年10月24日为了抗议朝野各政党议程，采取了哪些具体行动？",
+      "reference_answer": "他先指出中国国民党主席马英九内定要让军购案过关，再戴上V怪客面具造型的防毒面罩，表示不畏后果要求立法院程序委员会本次会议中止，希望在场委员离席；并出示电击棒、防狼喷雾，对空喷射催淚彈，中断议事约二十分钟，導致許多立委吸入「催淚瓦斯」，一身狼狽奪門而出。",
+      "gold_parent_index": 1583
+    },
+    {
+      "id": "q175",
+      "query": "新加坡在1965年8月9日发生了什么？",
+      "reference_answer": "新加坡在1965年8月9日成为独立的共和国。",
+      "gold_parent_index": 1592
+    },
+    {
+      "id": "q176",
+      "query": "温家宝在2003年第十届全国人大第一次会议上被任命为什么职务？",
+      "reference_answer": "国务院总理",
+      "gold_parent_index": 1601
+    },
+    {
+      "id": "q177",
+      "query": "嬴政在灭六国前制定的策略具体包含哪些措施？",
+      "reference_answer": "籠絡燕齊，穩住魏楚，消滅韓趙；遠交近攻，逐個擊破。",
+      "gold_parent_index": 1611
+    },
+    {
+      "id": "q178",
+      "query": "秦始皇在哪一年下令统一全国度量衡？",
+      "reference_answer": "公元前221年（秦始皇26年）",
+      "gold_parent_index": 1620
+    },
+    {
+      "id": "q179",
+      "query": "秦始皇焚书坑儒事件中，焚书政策从哪一年开始执行，又到哪一年被废除？",
+      "reference_answer": "焚书政策从前213年开始执行，一直执行到前191年汉惠帝除挟书律。",
+      "gold_parent_index": 1629
+    },
+    {
+      "id": "q180",
+      "query": "C#泛型类在编译时和实例化时分别如何处理类型参数T？",
+      "reference_answer": "C#泛型类在编译时先生成中间代码IL，通用类型符号T只是一个占位符；在实例化类时，根据实际数据类型代替T并由即时编译器（JIT）生成本地代码，其中使用了实际的数据类型，等同于用实际类型写的普通的类。",
+      "gold_parent_index": 1638
+    },
+    {
+      "id": "q181",
+      "query": "C# 10.0 的 record struct 特性解决了什么问题？",
+      "reference_answer": "解决了 record 只能给 class 而不能给 struct 用的问题。",
+      "gold_parent_index": 1647
+    },
+    {
+      "id": "q182",
+      "query": "巴斯克语的起源被认为与什么有关？",
+      "reference_answer": "巴斯克语被认为与其余三种语言有不同的起源，现在认为巴斯克语是已经消亡的伊比利亚语族的最后火种，在罗马人到达伊比利亚半岛前被广泛使用。",
+      "gold_parent_index": 1656
+    },
+    {
+      "id": "q183",
+      "query": "希特勒政府于1939年8月与苏联签署的条约名称是什么？",
+      "reference_answer": "《苏德互不侵犯条约》",
+      "gold_parent_index": 1665
+    },
+    {
+      "id": "q184",
+      "query": "德国文学历史可追溯至中世纪，当时有哪些知名作家？",
+      "reference_answer": "瓦尔特·冯·德·福格尔魏德和沃尔夫拉姆·冯·埃申巴赫。",
+      "gold_parent_index": 1675
+    },
+    {
+      "id": "q185",
+      "query": "1987年初，哪三个人被作为“资产阶级自由化、全盘西化”的反面典型在全党公开批判？",
+      "reference_answer": "方励之、刘宾雁和王若望。",
+      "gold_parent_index": 1684
+    },
+    {
+      "id": "q186",
+      "query": "中国的政党制度是什么？",
+      "reference_answer": "中国共产党领导的多党合作和政治协商制度，即在中国共产党领导下与8个民主党派合作和协商，进而组成统一战线。",
+      "gold_parent_index": 1693
+    },
+    {
+      "id": "q187",
+      "query": "类病毒为什么不被归入病毒中？",
+      "reference_answer": "类病毒是一类RNA分子，不归入病毒中，因为它们缺少由蛋白质形成的衣壳。",
+      "gold_parent_index": 1702
+    },
+    {
+      "id": "q188",
+      "query": "细菌防御噬菌体的主要方法是什么？",
+      "reference_answer": "细菌防御噬菌体的主要方法是合成能够降解外来DNA的酶，这些酶称为限制性内切酶，能够剪切噬菌体注入细菌细胞的病毒DNA。",
+      "gold_parent_index": 1711
+    },
+    {
+      "id": "q189",
+      "query": "东亚人四个主要父系单倍群是什么？",
+      "reference_answer": "O-M175、N-M231、C-M130和D-M174。",
+      "gold_parent_index": 1720
+    },
+    {
+      "id": "q190",
+      "query": "愛滋病病毒抗體檢測的空窗期一般為多長？",
+      "reference_answer": "由11天（最快）至三個月不等，亦有個別例子長達六個月；世衛及多數國家政府則採用三個月為準。",
+      "gold_parent_index": 1729
+    },
+    {
+      "id": "q191",
+      "query": "HIV-1与HIV-2分别可能由哪种灵长类动物的猴免疫缺陷病毒跨种感染演化而来？",
+      "reference_answer": "HIV-1可能是从黑猩猩的猴免疫缺陷病毒跨种感染演化而来；HIV-2则可能是从几内亚比索的乌白眉猴（Sooty Mangabey, Cercocebus atys）的另一种猴免疫缺陷病毒跨种感染而来。",
+      "gold_parent_index": 1739
+    },
+    {
+      "id": "q192",
+      "query": "联合国环境规划署何时宣布全球最后一个供应有铅汽油的国家停供？",
+      "reference_answer": "2021年8月30日，联合国环境规划署宣布全球最后一个供应有铅汽油的国家阿尔及利亚于7月起停供，有铅汽油正式走入历史。",
+      "gold_parent_index": 1748
+    },
+    {
+      "id": "q193",
+      "query": "默冬章的周期是多少年？",
+      "reference_answer": "19年",
+      "gold_parent_index": 1757
+    },
+    {
+      "id": "q194",
+      "query": "亚述巴尼帕在首都尼尼微建造了什么？",
+      "reference_answer": "人类历史上第一个大型图书馆，收藏大量泥板图书。",
+      "gold_parent_index": 1766
+    },
+    {
+      "id": "q195",
+      "query": "歌德在哪一年发现了颌间骨？",
+      "reference_answer": "1784年。",
+      "gold_parent_index": 1775
+    },
+    {
+      "id": "q196",
+      "query": "《卿云歌》第一次被暂用为临时国歌是在哪一天？",
+      "reference_answer": "1913年4月8日",
+      "gold_parent_index": 1784
+    },
+    {
+      "id": "q197",
+      "query": "安迪在肖申克监狱用石锤挖通道挖了多少年？",
+      "reference_answer": "19年",
+      "gold_parent_index": 1794
+    },
+    {
+      "id": "q198",
+      "query": "曼斯菲尔德感化院保护协会在哪一年以什么价格向俄亥俄州政府买下了废弃建筑？",
+      "reference_answer": "2000年，以一美元的价格。",
+      "gold_parent_index": 1803
+    },
+    {
+      "id": "q199",
+      "query": "《司马法》最早见于《汉书·艺文志》时被称为什么？共多少篇？",
+      "reference_answer": "《军礼司马法》，共155篇。",
+      "gold_parent_index": 1812
+    },
+    {
+      "id": "q200",
+      "query": "《三略》共分为哪几卷，总字数大约多少？",
+      "reference_answer": "《三略》共分上略、中略、下略3卷，共3800余字。",
+      "gold_parent_index": 1821
+    }
   ]
 }

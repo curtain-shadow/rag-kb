@@ -11,3 +11,5 @@ data/eval_report*.txt
 data/eval_compare*.txt
 *.log
 data/_smoke*
+data/eval_skipped.json
+data/mteb_results/

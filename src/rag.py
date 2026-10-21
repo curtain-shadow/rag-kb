@@ -69,19 +69,19 @@ class RAGPipeline:
         }
         return final_parents, trace
 
-    def answer(self, query: str) -> dict:
-        """非流式：返回完整结果 + trace。"""
+    def answer(self, query: str, seed: int | None = None) -> dict:
+        """非流式：返回完整结果 + trace。seed 下传给 LLM 使采样可复现。"""
         final_parents, trace = self._retrieve(query)
         messages = [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": _build_prompt(query, final_parents)},
         ]
         t0 = time.perf_counter()
-        answer_text = self.llm.chat(messages, temperature=0.3)
+        answer_text = self.llm.chat(messages, temperature=0.3, seed=seed)
         trace["timing_ms"]["llm"] = round((time.perf_counter() - t0) * 1000, 1)
         return {"answer": answer_text, "sources": [c.parent_text for c in final_parents], "trace": trace}
 
-    def answer_stream(self, query: str):
+    def answer_stream(self, query: str, seed: int | None = None):
         """流式：先 yield sources/trace，再逐 token yield delta，最后 done（供 SSE）。"""
         final_parents, trace = self._retrieve(query)
         messages = [
@@ -92,7 +92,7 @@ class RAGPipeline:
         def gen():
             yield {"type": "sources", "data": {"sources": [c.parent_text for c in final_parents], "trace": trace}}
             t0 = time.perf_counter()
-            for delta in self.llm.chat_stream(messages, temperature=0.3):
+            for delta in self.llm.chat_stream(messages, temperature=0.3, seed=seed):
                 yield {"type": "delta", "data": delta}
             trace["timing_ms"]["llm"] = round((time.perf_counter() - t0) * 1000, 1)
             yield {"type": "done", "data": {"trace": trace}}

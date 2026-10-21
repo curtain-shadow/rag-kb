@@ -65,37 +65,39 @@
 
 ## 量化评估（检索消融 + 端到端 LLM-as-judge）
 
-评测集在真实语料（简历信息库，当前 **74 子块 / 20 父块**）上自建，**每条 query 都带「参考答案 + gold 父块」**（语义级标注、非关键词反查，避免偏向 BM25）。两套脚本共用同一套 gold。
+评测集在中文维基语料（当前 **6932 子块 / 1822 父块**）上自建，**每条 query 都带「参考答案 + gold 父块」**（语义级标注、非关键词反查，避免偏向 BM25）。两套脚本共用同一套 gold。
 
-### 端到端三指标（`scripts/eval_rag.py`，30 条，DeepSeek 当裁判，自实现 judge 不依赖 ragas）
+### 端到端三指标（`scripts/eval_rag.py`，200 条 × 3 次运行，DeepSeek 当裁判，自实现 judge 不依赖 ragas）
 
 | 指标 | 分数 | 口径 |
 |---|---|---|
-| **忠实度 Faithfulness** | **100.0%** | 有依据陈述 / 总陈述（拆句逐条判定） |
-| **答案相关性 Answer Relevance** | **4.93 / 5** | 对照参考答案 1–5 分 |
-| **引用准确率 Citation Precision** | **97.7%** | 准确引用 / 总引用 = 42/43 |
-| **引用覆盖率 Citation Coverage** | **100.0%** | 含引用答案 / 总答案 |
+| **忠实度 Faithfulness** | **99.8% ± 0.3%** | 有依据陈述 / 总陈述（拆句逐条判定） |
+| **答案相关性 Answer Relevance** | **4.94 ± 0.01 / 5** | 对照参考答案 1–5 分 |
+| **引用准确率 Citation Precision** | **98.1% ± 0.4%** | 准确引用 / 总引用 = 795/810 |
+| **引用覆盖率 Citation Coverage** | **99.8% ± 0.3%** | 含引用答案 / 总答案 |
 
-检索侧（同一 30 条，full 配置，Cross-Encoder 重排 top-4）：**Hit@1 73.3% / Hit@3 93.3% / Hit@4 96.7%**。
+> 注：200 条中 3 条（q021/q176/q185）gold 父块含政治历史内容、被 DeepSeek 审核拦截（Content Exists Risk），跳过不计入指标，有效 197 条。分数为 3 次运行（seed=42/43/44）的均值 ± 标准差。
 
-### 检索消融（`scripts/eval_ablation.py`，20 条）
+检索侧（同一 200 条，full 配置，Cross-Encoder 重排 top-4，检索确定性方差 0）：**Hit@1 93.9% / Hit@3 99.5% / Hit@4 99.5%**。
+
+### 检索消融（`scripts/eval_ablation.py`，200 条，中文维基语料）
 
 | 配置 | Hit@1 | Hit@3 | Hit@4 |
 |---|---|---|---|
-| **full（BM25 + 稠密 + RRF + 重排）** | **80.0%** | **95.0%** | **100%** |
-| no-rerank（BM25 + 稠密 + RRF） | 75.0% | 95.0% | 100% |
-| dense-only（仅稠密向量） | 75.0% | 100% | 100% |
+| **full（BM25 + 稠密 + RRF + 重排）** | **94.0%** | **99.5%** | **99.5%** |
+| no-rerank（BM25 + 稠密 + RRF） | 80.0% | 92.5% | 95.5% |
+| dense-only（仅稠密向量） | 84.5% | 94.0% | 95.0% |
 
 两条结论（诚实口径）：
 
-1. **重排提精度**：Cross-Encoder 精排把 Hit@1 从 75% 提到 80%（+5pp），并把 no-rerank 掉到 95% 的 Hit@3 拉回 Hit@4=100%——「双塔粗排 + Cross-Encoder 精排」的工业组合成立。
-2. **BM25 在小语料上补召回不明显**：dense-only 已 Hit@3=100%，加 BM25 后 Hit@3 反而 95%（BM25 的精确词匹配把 1 条错误父块顶进 top-3）。这是 **20 父块小语料的预期结果**——BM25 的互补价值在「精确词 / 低频术语」场景，小语料里这类词少、收益被精度损耗抵消，其价值在更大更异质的语料上才显现。
+1. **重排是精度主力，且大语料上更显著**：Cross-Encoder 精排把 Hit@1 从 80.0% 提到 94.0%（**+14pp**，小语料时仅 +5pp），Hit@3 92.5%→99.5%——「双塔粗排 + Cross-Encoder 精排」的工业组合在大语料上价值更大。
+2. **BM25 单独是负贡献，配合重排才为正**：无重排阶段，加 BM25 反而把 Hit@1 从 84.5% 拉到 80.0%（-4.5pp，BM25 的精确词匹配把语义相关但非 gold 的父块顶进 top-1）；但 full（BM25+重排）最终 94.0% 最优——BM25 的价值是「多召回候选、交给重排筛选」，直接当最终排序反而有害。
 
 复现：
 
 ```bash
 python scripts/eval_ablation.py   # 检索消融 + Hit Rate（加载 BGE-M3 + reranker，约 1–2 分钟）
-python scripts/eval_rag.py        # 端到端 LLM-as-judge 三指标 + Hit Rate（30 条，约 4–6 分钟，可断点续跑）
+python scripts/eval_rag.py --runs 3 --seed 42   # 端到端 LLM-as-judge 三指标 + Hit Rate（200 条 × 3 runs，可断点续跑）
 ```
 
 ## 本地 LoRA 微调（`src/finetune/` + `scripts/train_lora.py`）
@@ -107,7 +109,7 @@ python scripts/eval_rag.py        # 端到端 LLM-as-judge 三指标 + Hit Rate�
 - **权重不入库**：`data/lora_qwen_rag/` 已 gitignore，用 `scripts/train_lora.py` 一键复现。
 - **关键坑（8GB 卡 OOM 根因）**：transformers 无 padding 时默认走原生 GQA SDPA 内核（`enable_gqa=True`），torch 2.13 上把 T×T 注意力分数物化出来、显存 O(T²) 直接 OOM；在 `src/finetune/train.py` monkeypatch `use_gqa_in_sdpa→False` 强制 `repeat_kv` 展开路径后，峰值 7.9GB→5.2GB。
 
-### 四路生成后端对比（`scripts/eval_compare.py`，30 条，裁判=DeepSeek）
+### 四路生成后端对比（`scripts/eval_compare.py`，旧 30 条评测集，裁判=DeepSeek；200 条重跑待补）
 
 检索 / 重排 / 评测集完全相同，只换生成后端：
 
@@ -162,7 +164,7 @@ rag_kb/
 │   └── finetune/              # LoRA 微调：data（合成数据加载）+ train（手写训练循环）
 ├── scripts/                   # Day1 + Week1-4 逐周验证脚本 + eval_ablation / eval_rag / eval_compare / train_lora / serve_local.bat
 ├── data/docs/                 # 待入库文档（PDF/DOCX/TXT/MD）
-├── data/eval_set.json         # 端到端评测集（30 条：query / 参考答案 / gold 父块）
+├── data/eval_set.json         # 端到端评测集（200 条：query / 参考答案 / gold 父块）
 ├── requirements.txt
 ├── PROCESS.md                 # 项目从 0 到 1 的完整实现过程（面试前通读）
 └── .env                       # API Key（已 gitignore）
@@ -181,7 +183,7 @@ D:/profession/venv/Scripts/python.exe -m pip install -r requirements.txt
 #   DEEPSEEK_BASE_URL=https://api.deepseek.com
 #   DEEPSEEK_MODEL=deepseek-chat
 
-# 3. 启动服务（默认入库 d:\个人\简历信息库.md）
+# 3. 启动服务（默认入库 data/docs/wiki_zh_sample.md，中文维基语料）
 HF_ENDPOINT=https://hf-mirror.com \
   D:/profession/venv/Scripts/python.exe -m uvicorn src.api:app --app-dir D:/profession/rag_kb --port 8000
 

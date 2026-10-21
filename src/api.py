@@ -21,9 +21,11 @@ from .rag import RAGPipeline
 _rag: RAGPipeline | None = None
 
 
-def build_rag(doc_path: str = r"d:\个人\简历信息库.md") -> RAGPipeline:
-    """构建流水线：解析 + 分块 + 建索引（加载模型，较慢）。"""
+def build_rag(doc_path: str | None = None) -> RAGPipeline:
+    """构建流水线：解析 + 分块 + 建索引（加载模型，较慢）。默认入库中文维基语料。"""
     global _rag
+    if doc_path is None:
+        doc_path = str(Path(__file__).resolve().parent.parent / "data" / "docs" / "wiki_zh_sample.md")
     doc = get_parser(Path(doc_path)).parse(Path(doc_path))
     children, _ = ParentChildChunker(child_size=512, parent_size=1536).chunk(doc)
     _rag = RAGPipeline(children)

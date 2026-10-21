@@ -9,10 +9,10 @@ r"""端到端评测：LLM-as-judge（DeepSeek 当裁判）+ 检索 Hit Rate。
 外加检索侧 Hit Rate@k：gold 父块是否落在 Cross-Encoder 重排后 top-k（复用 eval_ablation 口径，
 但 gold 标注已按当前 20 父块切分重新核对，纠正了文档增长导致的旧标注偏移）。
 
-评测集：data/eval_set.json（30 条，每条含 query / reference_answer / gold_parent_index）。
+评测集：data/eval_set.json（每条含 query / reference_answer / gold_parent_index，语料路径由 corpus 字段指定）。
 
-跑法：D:\profession\venv\Scripts\python.exe scripts\eval_rag.py [--limit N] [--fresh]
-结果：增量写入 data/eval_results.json（可断点续跑），汇总打印到 stdout 并写 data/eval_report.txt。
+跑法：D:/profession/venv/Scripts/python.exe scripts/eval_rag.py [--limit N] [--runs N] [--seed S] [--fresh]
+结果：增量写入 data/eval_results.json（按 (qid, run) 维度断点续跑），汇总打印均值±方差到 stdout 并写 data/eval_report.txt。
 """
 from __future__ import annotations
 
@@ -22,21 +22,23 @@ import re
 import sys
 import time
 from pathlib import Path
+from statistics import mean, stdev
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import src.config  # noqa: F401  # 触发 HF_ENDPOINT / HF_HOME 镜像与缓存环境变量
-from openai import OpenAI
+from openai import BadRequestError, OpenAI
 
 from src.config import settings
 from src.parsing import get_parser
 from src.chunking import ParentChildChunker
 from src.rag import RAGPipeline
 
-REAL_MD = Path(r"d:\个人\简历信息库.md")
+CORPUS_DEFAULT = Path(__file__).resolve().parent.parent / "data" / "docs" / "wiki_zh_sample.md"
 EVAL_SET = Path(__file__).resolve().parent.parent / "data" / "eval_set.json"
 RESULTS = Path(__file__).resolve().parent.parent / "data" / "eval_results.json"
 REPORT = Path(__file__).resolve().parent.parent / "data" / "eval_report.txt"
+SKIPPED = Path(__file__).resolve().parent.parent / "data" / "eval_skipped.json"
 
 _CIT_RE = re.compile(r"\[\d+\]")
 
@@ -85,24 +87,34 @@ def _to_int(v, default=0) -> int:
         return default
 
 
-def _judge_json(client, system: str, user: str, max_tokens: int = 2000):
-    resp = client.chat.completions.create(
-        model=settings.deepseek_model,
-        messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
-        temperature=0.0,
-        max_tokens=max_tokens,
-        response_format={"type": "json_object"},
-    )
-    return _parse_json(resp.choices[0].message.content)
+def _judge_json(client, system: str, user: str, max_tokens: int = 4000, seed: int | None = None):
+    def _call(mt: int):
+        kwargs: dict = dict(
+            model=settings.deepseek_model,
+            messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
+            temperature=0.0,
+            max_tokens=mt,
+            response_format={"type": "json_object"},
+        )
+        if seed is not None:
+            kwargs["seed"] = seed
+        resp = client.chat.completions.create(**kwargs)
+        return _parse_json(resp.choices[0].message.content)
+
+    try:
+        return _call(max_tokens)
+    except (json.JSONDecodeError, ValueError):
+        # 解析失败通常是 judge 返回的 JSON 被 max_tokens 截断；加大额度重试一次
+        return _call(8000)
 
 
 def _refs_str(sources: list[str]) -> str:
     return "\n\n".join(f"[{i}] {t}" for i, t in enumerate(sources, 1))
 
 
-def _score_faithfulness(client, query: str, answer: str, refs: str) -> tuple[float, list]:
+def _score_faithfulness(client, query: str, answer: str, refs: str, seed: int | None = None) -> tuple[float, list]:
     user = f"【参考资料】\n{refs}\n\n【问题】\n{query}\n\n【模型答案】\n{answer}"
-    data = _judge_json(client, FAITH_SYSTEM, user)
+    data = _judge_json(client, FAITH_SYSTEM, user, seed=seed)
     stmts = data.get("statements", []) or []
     if not stmts:
         return 0.0, []
@@ -110,17 +122,17 @@ def _score_faithfulness(client, query: str, answer: str, refs: str) -> tuple[flo
     return grounded / len(stmts), stmts
 
 
-def _score_relevance(client, query: str, answer: str, reference: str) -> tuple[float, str]:
+def _score_relevance(client, query: str, answer: str, reference: str, seed: int | None = None) -> tuple[float, str]:
     user = f"【问题】\n{query}\n\n【参考答案】\n{reference}\n\n【模型答案】\n{answer}"
-    data = _judge_json(client, REL_SYSTEM, user)
+    data = _judge_json(client, REL_SYSTEM, user, seed=seed)
     rel = _to_int(data.get("relevance"), 3)
     rel = max(1, min(5, rel))
     return rel, data.get("reason", "")
 
 
-def _score_citation(client, query: str, answer: str, refs: str) -> tuple[list, int, int]:
+def _score_citation(client, query: str, answer: str, refs: str, seed: int | None = None) -> tuple[list, int, int]:
     user = f"【参考资料】\n{refs}\n\n【问题】\n{query}\n\n【模型答案】\n{answer}"
-    data = _judge_json(client, CIT_SYSTEM, user)
+    data = _judge_json(client, CIT_SYSTEM, user, seed=seed)
     cites = data.get("citations", []) or []
     n_total = len(cites)
     n_acc = sum(1 for c in cites if _to_bool(c.get("accurate")))
@@ -137,10 +149,24 @@ def _load_done(results_path: Path) -> dict[str, dict]:
             # JSON 把 dict 键序列化成字符串，命中标记键归一化回 int，避免聚合时 KeyError
             if isinstance(it.get("hit"), dict):
                 it["hit"] = {int(k): v for k, v in it["hit"].items()}
-            out[it["id"]] = it
+            out[f"{it['id']}:{it.get('run', 0)}"] = it
         return out
     except Exception:
         return {}
+
+
+def _load_skipped() -> set[str]:
+    if not SKIPPED.exists():
+        return set()
+    try:
+        return set(json.loads(SKIPPED.read_text(encoding="utf-8")))
+    except Exception:
+        return set()
+
+
+def _save_skipped(skipped: set[str]) -> None:
+    SKIPPED.parent.mkdir(parents=True, exist_ok=True)
+    SKIPPED.write_text(json.dumps(sorted(skipped), ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def main():
@@ -154,6 +180,8 @@ def main():
     ap.add_argument("--http-model", type=str, default="", help="local-http 后端模型名")
     ap.add_argument("--out", type=str, default="", help="结果 JSON 输出路径（空=默认）")
     ap.add_argument("--report", type=str, default="", help="报告 txt 输出路径（空=默认）")
+    ap.add_argument("--seed", type=int, default=42, help="随机种子（生成采样可复现；judge 固定用此 seed）")
+    ap.add_argument("--runs", type=int, default=1, help="多次运行次数，报均值±方差（默认 1）")
     args = ap.parse_args()
 
     # 生成后端切换（在构建 pipeline 前生效；judge 始终用 DeepSeek，保证评测口径一致）
@@ -176,7 +204,8 @@ def main():
         items = items[: args.limit]
 
     # 1) 建索引 + 父块映射（gold index -> parent_chunk_id）
-    doc = get_parser(REAL_MD).parse(REAL_MD)
+    corpus = Path(eval_data.get("corpus") or CORPUS_DEFAULT)
+    doc = get_parser(corpus).parse(corpus)
     children, _ = ParentChildChunker(child_size=512, parent_size=1536).chunk(doc)
     idx2pid = {}
     for c in children:
@@ -187,91 +216,139 @@ def main():
     pipeline = RAGPipeline(children, top_k=12, rerank_k=4)
     client = OpenAI(api_key=settings.deepseek_api_key, base_url=settings.deepseek_base_url)
 
-    # 2) 断点续跑
+    # 2) 断点续跑（按 (qid, run) 维度缓存）
     done = {} if args.fresh else _load_done(results_path)
+    skipped = _load_skipped()
 
     results = []
     t_start = time.perf_counter()
-    for n, item in enumerate(items, 1):
-        qid = item["id"]
-        if qid in done:
-            results.append(done[qid])
-            print(f"[{n}/{len(items)}] {qid} 已缓存，跳过", flush=True)
-            continue
+    for run_idx in range(args.runs):
+        gen_seed = args.seed + run_idx
+        for n, item in enumerate(items, 1):
+            qid = item["id"]
+            key = f"{qid}:{run_idx}"
+            if key in done:
+                results.append(done[key])
+                print(f"[run{run_idx + 1}/{args.runs}] [{n}/{len(items)}] {qid} 已缓存，跳过", flush=True)
+                continue
 
-        query, reference, gold_idx = item["query"], item["reference_answer"], item["gold_parent_index"]
-        gold_pid = idx2pid.get(gold_idx, "")
+            if qid in skipped:
+                print(f"[run{run_idx + 1}/{args.runs}] [{n}/{len(items)}] {qid} 已标记敏感，跳过", flush=True)
+                continue
 
-        # 端到端生成（子块检索 -> 父块去重 -> 重排 -> LLM 带引用回答）
-        out = pipeline.answer(query)
-        answer = out["answer"]
-        sources = out["sources"]  # 与 prompt 中 [1]..[N] 一一对应
-        refs = _refs_str(sources)
-        final_pids = [r["id"] for r in out["trace"].get("rerank", [])]
+            query, reference, gold_idx = item["query"], item["reference_answer"], item["gold_parent_index"]
+            gold_pid = idx2pid.get(gold_idx, "")
 
-        # 检索 Hit Rate：gold 父块是否进重排 top-k
-        hit = {1: gold_pid in final_pids[:1], 3: gold_pid in final_pids[:3], 4: gold_pid in final_pids[:4]}
+            try:
+                # 端到端生成（子块检索 -> 父块去重 -> 重排 -> LLM 带引用回答）
+                out = pipeline.answer(query, seed=gen_seed)
+                answer = out["answer"]
+                sources = out["sources"]  # 与 prompt 中 [1]..[N] 一一对应
+                refs = _refs_str(sources)
+                final_pids = [r["id"] for r in out["trace"].get("rerank", [])]
 
-        # LLM-as-judge 三指标
-        faith, stmts = _score_faithfulness(client, query, answer, refs)
-        rel, rel_reason = _score_relevance(client, query, answer, reference)
-        cites, n_acc, n_cit = _score_citation(client, query, answer, refs)
-        has_cit = bool(_CIT_RE.search(answer))
+                # 检索 Hit Rate：gold 父块是否进重排 top-k（确定性，跨 run 相同）
+                hit = {1: gold_pid in final_pids[:1], 3: gold_pid in final_pids[:3], 4: gold_pid in final_pids[:4]}
 
-        row = {
-            "id": qid,
-            "query": query,
-            "reference_answer": reference,
-            "gold_parent_index": gold_idx,
-            "answer": answer,
-            "sources": sources,
-            "final_parent_ids": final_pids,
-            "faithfulness": round(faith, 4),
-            "statements": stmts,
-            "relevance": rel,
-            "relevance_reason": rel_reason,
-            "citation_accurate": n_acc,
-            "citation_total": n_cit,
-            "has_citation": has_cit,
-            "citations": cites,
-            "hit": hit,
-        }
-        results.append(row)
-        done[qid] = row
-        results_path.parent.mkdir(parents=True, exist_ok=True)
-        results_path.write_text(
-            json.dumps({"timestamp": time.strftime("%Y-%m-%d %H:%M:%S"), "items": list(done.values())},
-                       ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
-        print(f"[{n}/{len(items)}] {qid} 忠实度={faith:.0%} 相关性={rel}/5 引用={n_acc}/{n_cit} "
-              f"Hit@1={'Y' if hit[1] else 'N'} Hit@4={'Y' if hit[4] else 'N'}", flush=True)
+                # LLM-as-judge 三指标（judge 固定 seed，temperature=0 本身确定）
+                faith, stmts = _score_faithfulness(client, query, answer, refs, seed=args.seed)
+                rel, rel_reason = _score_relevance(client, query, answer, reference, seed=args.seed)
+                cites, n_acc, n_cit = _score_citation(client, query, answer, refs, seed=args.seed)
+                has_cit = bool(_CIT_RE.search(answer))
 
-    # 3) 汇总
-    n = len(results)
-    faith = sum(r["faithfulness"] for r in results) / n
-    rel = sum(r["relevance"] for r in results) / n
-    n_cit_total = sum(r["citation_total"] for r in results)
-    n_cit_acc = sum(r["citation_accurate"] for r in results)
-    cit_prec = n_cit_acc / n_cit_total if n_cit_total else 0.0
-    cit_cov = sum(1 for r in results if r["has_citation"]) / n
-    hit_rate = {k: sum(1 for r in results if r["hit"][k]) / n for k in (1, 3, 4)}
+                row = {
+                    "id": qid,
+                    "run": run_idx,
+                    "seed": gen_seed,
+                    "query": query,
+                    "reference_answer": reference,
+                    "gold_parent_index": gold_idx,
+                    "answer": answer,
+                    "sources": sources,
+                    "final_parent_ids": final_pids,
+                    "faithfulness": round(faith, 4),
+                    "statements": stmts,
+                    "relevance": rel,
+                    "relevance_reason": rel_reason,
+                    "citation_accurate": n_acc,
+                    "citation_total": n_cit,
+                    "has_citation": has_cit,
+                    "citations": cites,
+                    "hit": hit,
+                }
+                results.append(row)
+                done[key] = row
+                results_path.parent.mkdir(parents=True, exist_ok=True)
+                results_path.write_text(
+                    json.dumps({"timestamp": time.strftime("%Y-%m-%d %H:%M:%S"), "items": list(done.values())},
+                               ensure_ascii=False, indent=2),
+                    encoding="utf-8",
+                )
+                print(f"[run{run_idx + 1}/{args.runs}] [{n}/{len(items)}] {qid} 忠={faith:.0%} 相={rel}/5 "
+                      f"引={n_acc}/{n_cit} Hit@1={'Y' if hit[1] else 'N'} Hit@4={'Y' if hit[4] else 'N'}", flush=True)
+            except BadRequestError as e:
+                if "Content Exists Risk" in str(e):
+                    # 语料/答案含敏感内容被 DeepSeek 审核拦截：该 qid 跨 run 都会命中，标记后跳过
+                    skipped.add(qid)
+                    _save_skipped(skipped)
+                    print(f"[run{run_idx + 1}/{args.runs}] [{n}/{len(items)}] {qid} 内容审核拦截，标记跳过", flush=True)
+                    continue
+                raise
+
+    # 3) 汇总（跨 run 统计均值 ± 方差）
+    runs = sorted({r["run"] for r in results})
+
+    def run_metrics(rows):
+        m = len(rows)
+        r_faith = sum(x["faithfulness"] for x in rows) / m
+        r_rel = sum(x["relevance"] for x in rows) / m
+        r_n_cit_total = sum(x["citation_total"] for x in rows)
+        r_n_cit_acc = sum(x["citation_accurate"] for x in rows)
+        r_cit_prec = r_n_cit_acc / r_n_cit_total if r_n_cit_total else 0.0
+        r_cit_cov = sum(1 for x in rows if x["has_citation"]) / m
+        r_hit = {k: sum(1 for x in rows if x["hit"][k]) / m for k in (1, 3, 4)}
+        return dict(faith=r_faith, rel=r_rel, cit_prec=r_cit_prec, cit_cov=r_cit_cov,
+                    n_cit_acc=r_n_cit_acc, n_cit_total=r_n_cit_total, hit=r_hit)
+
+    per_run = [run_metrics([r for r in results if r["run"] == ri]) for ri in runs]
+
+    def fmt(vals, spec=".1%"):
+        if len(vals) == 1:
+            return format(vals[0], spec)
+        return f"{format(mean(vals), spec)} ± {format(stdev(vals), spec)}"
+
+    faith_str = fmt([m["faith"] for m in per_run])
+    rel_str = fmt([m["rel"] for m in per_run], ".2f")
+    cit_prec_str = fmt([m["cit_prec"] for m in per_run])
+    cit_cov_str = fmt([m["cit_cov"] for m in per_run])
+    n_cit_acc = sum(m["n_cit_acc"] for m in per_run)
+    n_cit_total = sum(m["n_cit_total"] for m in per_run)
+    hit_rate = per_run[0]["hit"]  # 检索确定性，各 run 相同
 
     lines = []
     lines.append("=" * 66)
-    lines.append(f"端到端评测汇总（n={n}，{time.strftime('%Y-%m-%d %H:%M:%S')}）")
+    lines.append(f"端到端评测汇总（n={len(items)}，runs={args.runs}，{time.strftime('%Y-%m-%d %H:%M:%S')}）")
     lines.append("=" * 66)
-    lines.append(f"忠实度 Faithfulness        {faith:6.1%}   （有依据陈述 / 总陈述）")
-    lines.append(f"答案相关性 Answer Relevance {rel:5.2f}/5   （归一化 {(rel-1)/4:6.1%}）")
-    lines.append(f"引用准确率 Citation Prec.  {cit_prec:6.1%}   （准确引用 / 总引用 = {n_cit_acc}/{n_cit_total}）")
-    lines.append(f"引用覆盖率 Citation Cov.   {cit_cov:6.1%}   （含引用的答案 / 总答案）")
-    lines.append(f"检索 Hit@1 / Hit@3 / Hit@4 {hit_rate[1]:.1%} / {hit_rate[3]:.1%} / {hit_rate[4]:.1%}")
+    if skipped:
+        lines.append(f"注：{len(skipped)} 条含敏感内容被 DeepSeek 审核拦截（Content Exists Risk），已跳过不计入指标：{', '.join(sorted(skipped))}")
+    lines.append(f"忠实度 Faithfulness        {faith_str}   （有依据陈述 / 总陈述）")
+    lines.append(f"答案相关性 Answer Relevance {rel_str}/5")
+    lines.append(f"引用准确率 Citation Prec.  {cit_prec_str}   （准确引用 / 总引用 = {n_cit_acc}/{n_cit_total}）")
+    lines.append(f"引用覆盖率 Citation Cov.   {cit_cov_str}   （含引用的答案 / 总答案）")
+    lines.append(f"检索 Hit@1 / Hit@3 / Hit@4 {hit_rate[1]:.1%} / {hit_rate[3]:.1%} / {hit_rate[4]:.1%}   （检索确定性，方差 0）")
     lines.append("=" * 66)
-    lines.append("\n逐条明细（gold -> 重排 top-4 是否命中；引用 A=准确/T=总）：")
-    for r in results:
-        h = "".join("1" if r["hit"][1] else "·") + "".join("3" if r["hit"][3] else "·") + "".join("4" if r["hit"][4] else "·")
-        lines.append(f"[{r['id']}] 忠={r['faithfulness']:.0%} 相={r['relevance']}/5 "
-                     f"引={r['citation_accurate']}/{r['citation_total']} hit@134={h}  {r['query']}")
+
+    if args.runs == 1:
+        lines.append("\n逐条明细（gold -> 重排 top-4 是否命中；引用 A=准确/T=总）：")
+        for r in results:
+            h = "".join("1" if r["hit"][1] else "·") + "".join("3" if r["hit"][3] else "·") + "".join("4" if r["hit"][4] else "·")
+            lines.append(f"[{r['id']}] 忠={r['faithfulness']:.0%} 相={r['relevance']}/5 "
+                         f"引={r['citation_accurate']}/{r['citation_total']} hit@134={h}  {r['query']}")
+    else:
+        lines.append("\n各 run 指标（用于观察方差来源）：")
+        for ri, m in zip(runs, per_run):
+            lines.append(f"  run{ri + 1}（seed={args.seed + ri}）: 忠={m['faith']:.1%} 相={m['rel']:.2f} "
+                         f"引准={m['cit_prec']:.1%} 引覆={m['cit_cov']:.1%}")
 
     report = "\n".join(lines)
     report_path.write_text(report, encoding="utf-8")
