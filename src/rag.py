@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import time
 
-from .llm import LLMClient
+from .llm import get_llm_client
 from .retrieval import HybridRetriever
 from .retrieval.reranker import CrossEncoderReranker
 
@@ -42,7 +42,7 @@ class RAGPipeline:
     def __init__(self, children, top_k: int = 12, rerank_k: int = 4):
         self.retriever = HybridRetriever(children)
         self.reranker = CrossEncoderReranker()
-        self.llm = LLMClient()
+        self.llm = get_llm_client()
         self.top_k = top_k
         self.rerank_k = rerank_k
 

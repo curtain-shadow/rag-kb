@@ -26,6 +26,14 @@ class Settings(BaseSettings):
     deepseek_base_url: str = "https://api.deepseek.com"
     deepseek_model: str = "deepseek-chat"
 
+    # LLM 后端（deepseek | local | local-http）；local 用本地 transformers 模型（LoRA 可选），
+    # local-http 指向 Ollama / llama.cpp 的 OpenAI 兼容端点（GGUF 部署，进程隔离不占本进程显存）
+    llm_backend: str = "deepseek"
+    local_model_path: str = r"D:\profession\models\Qwen2.5-1.5B-Instruct"
+    local_adapter_path: str = ""  # 空 = 只用基座；加载 LoRA 用 eval_rag.py --adapter 或 LocalModelClient(adapter_path=...) 显式传入
+    local_http_base_url: str = "http://127.0.0.1:8080/v1"
+    local_http_model: str = "qwen2.5-1.5b-instruct"
+
     # 路径
     data_dir: Path = ROOT / "data"
     docs_dir: Path = ROOT / "data" / "docs"

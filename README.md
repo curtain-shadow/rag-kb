@@ -49,7 +49,7 @@
 | 稠密向量 | `BAAI/bge-m3`（只加载 dense head）· faiss-cpu（`IndexFlatIP` 归一化=余弦）／ Milvus（HNSW ANN + COSINE，可切换） |
 | 稀疏检索 | 自实现 BM25（k1=1.5, b=0.75）+ jieba 分词 |
 | 融合 / 重排 | RRF（k=60）· `BAAI/bge-reranker-v2-m3` Cross-Encoder |
-| LLM | DeepSeek（`deepseek-chat`）主，GLM 降级 |
+| LLM | DeepSeek（`deepseek-chat`）主，GLM 降级；本地 Qwen2.5-1.5B-Instruct（transformers / + LoRA / GGUF 三态可切换） |
 | 服务 | FastAPI · uvicorn · sse-starlette（SSE 流式） |
 
 ## 四个「为什么」（面试追问必答）
@@ -63,22 +63,89 @@
 4. **为什么 Cross-Encoder 只重排 top-k，不能全库重排？**
    Cross-Encoder 把 query 与候选**拼接后一起进编码器**，是逐对 O(N) 推理，无法像双塔那样预编码后做 ANN 检索，全库 N 太大根本跑不动。所以它是「精排」，只对粗召回后的 top-k 候选做精排，双塔粗排 + Cross-Encoder 精排是工业标准组合。
 
-## 量化评估与消融实验（Hit Rate）
+## 量化评估（检索消融 + 端到端 LLM-as-judge）
 
-自建 20 条**语义级** ground truth（每条标注一个能回答该问题的父块，不是关键词反查，避免偏向 BM25），在真实语料（简历信息库 56 子块 / 16 父块）上跑三组消融，度量父块级 Hit Rate@k：
+评测集在真实语料（简历信息库，当前 **74 子块 / 20 父块**）上自建，**每条 query 都带「参考答案 + gold 父块」**（语义级标注、非关键词反查，避免偏向 BM25）。两套脚本共用同一套 gold。
 
-| 配置 | Hit@1 | Hit@3 | Hit@5 |
+### 端到端三指标（`scripts/eval_rag.py`，30 条，DeepSeek 当裁判，自实现 judge 不依赖 ragas）
+
+| 指标 | 分数 | 口径 |
+|---|---|---|
+| **忠实度 Faithfulness** | **100.0%** | 有依据陈述 / 总陈述（拆句逐条判定） |
+| **答案相关性 Answer Relevance** | **4.93 / 5** | 对照参考答案 1–5 分 |
+| **引用准确率 Citation Precision** | **97.7%** | 准确引用 / 总引用 = 42/43 |
+| **引用覆盖率 Citation Coverage** | **100.0%** | 含引用答案 / 总答案 |
+
+检索侧（同一 30 条，full 配置，Cross-Encoder 重排 top-4）：**Hit@1 73.3% / Hit@3 93.3% / Hit@4 96.7%**。
+
+### 检索消融（`scripts/eval_ablation.py`，20 条）
+
+| 配置 | Hit@1 | Hit@3 | Hit@4 |
 |---|---|---|---|
-| **full（BM25 + 稠密 + RRF + 重排）** | **80.0%** | **100%** | **100%** |
-| no-rerank（BM25 + 稠密 + RRF） | 65.0% | 100% | 100% |
-| dense-only（仅稠密向量） | 70.0% | 95.0% | 95.0% |
+| **full（BM25 + 稠密 + RRF + 重排）** | **80.0%** | **95.0%** | **100%** |
+| no-rerank（BM25 + 稠密 + RRF） | 75.0% | 95.0% | 100% |
+| dense-only（仅稠密向量） | 75.0% | 100% | 100% |
 
-两条消融结论，直接给「为什么」补数据：
+两条结论（诚实口径）：
 
-1. **BM25 补召回**：dense-only 的 Hit@3 只有 95%（漏 1 条），加 BM25 后拉到 100%；但 Hit@1 反而从 70% 掉到 65%——BM25 的精确词匹配可能把错误父块顶到第 1，说明它「召回强、精度糙」。
-2. **重排提精度**：Cross-Encoder 精排把 Hit@1 从 65% 拉回 80%（高于两条单路），同时保住 100% 召回，印证「双塔粗排 + Cross-Encoder 精排」的工业组合。
+1. **重排提精度**：Cross-Encoder 精排把 Hit@1 从 75% 提到 80%（+5pp），并把 no-rerank 掉到 95% 的 Hit@3 拉回 Hit@4=100%——「双塔粗排 + Cross-Encoder 精排」的工业组合成立。
+2. **BM25 在小语料上补召回不明显**：dense-only 已 Hit@3=100%，加 BM25 后 Hit@3 反而 95%（BM25 的精确词匹配把 1 条错误父块顶进 top-3）。这是 **20 父块小语料的预期结果**——BM25 的互补价值在「精确词 / 低频术语」场景，小语料里这类词少、收益被精度损耗抵消，其价值在更大更异质的语料上才显现。
 
-复现：`python scripts/eval_ablation.py`（加载 BGE-M3 + bge-reranker，约 1–2 分钟）。
+复现：
+
+```bash
+python scripts/eval_ablation.py   # 检索消融 + Hit Rate（加载 BGE-M3 + reranker，约 1–2 分钟）
+python scripts/eval_rag.py        # 端到端 LLM-as-judge 三指标 + Hit Rate（30 条，约 4–6 分钟，可断点续跑）
+```
+
+## 本地 LoRA 微调（`src/finetune/` + `scripts/train_lora.py`）
+
+用 DeepSeek 合成 **294 条「带引用 RAG 问答」SFT 数据**（每条 `[i]` 引用经校验真实存在于给定资料，不合格丢弃），对 **Qwen2.5-1.5B-Instruct** 做**纯 LoRA bf16 微调**——不量化、不依赖 bitsandbytes / trl，手写训练循环。
+
+- **配置**：r=16 / alpha=32 / dropout=0.05，target=7 个注意力+FFN 投影层，可训练 **18.46M（1.18%）**；gradient checkpointing + 分块交叉熵（15.2w 词表 logits 分块算），8GB 卡峰值显存 **~5.2GB**。
+- **训练**：3 epoch，265 train / 29 val，val_loss `0.3787 → 0.3582`，adapter 存 `data/lora_qwen_rag`。
+- **权重不入库**：`data/lora_qwen_rag/` 已 gitignore，用 `scripts/train_lora.py` 一键复现。
+- **关键坑（8GB 卡 OOM 根因）**：transformers 无 padding 时默认走原生 GQA SDPA 内核（`enable_gqa=True`），torch 2.13 上把 T×T 注意力分数物化出来、显存 O(T²) 直接 OOM；在 `src/finetune/train.py` monkeypatch `use_gqa_in_sdpa→False` 强制 `repeat_kv` 展开路径后，峰值 7.9GB→5.2GB。
+
+### 四路生成后端对比（`scripts/eval_compare.py`，30 条，裁判=DeepSeek）
+
+检索 / 重排 / 评测集完全相同，只换生成后端：
+
+| 指标 | DeepSeek(云端) | Qwen-1.5B 基座 | Qwen-1.5B + LoRA | Qwen-1.5B GGUF(fp16) |
+|---|---|---|---|---|
+| 忠实度 Faithfulness | 100.0% | 82.2% | 98.9% | 90.4% |
+| 相关性 Relevance /5 | 4.87 | 4.03 | 4.30 | 4.43 |
+| 引用准确率 Cit.Prec | 97.7% | 0.0% | 76.7% | 0.0% |
+| 引用覆盖率 Cit.Cov | 100.0% | 0.0% | 100.0% | 0.0% |
+| 检索 Hit@1 / 3 / 4 | 73.3 / 93.3 / 96.7% | 同 | 同 | 同 |
+
+> 注：基座列此前因 `config.py` 里 `local_adapter_path` 默认值误指向 LoRA 目录、导致误加载 LoRA，已修复（默认值改空）并重跑修正。
+
+四条诚实结论：
+
+1. **检索指标四者完全一致** —— 对比实验公平性成立（hit rate 只取决于检索/重排，与生成后端无关）。
+2. **引用能力是 LoRA 微调独有的**：纯基座（bf16 与 GGUF fp16 均如此）几乎不带 `[i]` 引用（覆盖率 0%），LoRA 教会了带引用（0%→100%）。
+3. **LoRA 微调还带来忠实度与相关性提升**：忠实度 82.2%→98.9%（+16.7pp，学会「只依据资料、资料不足不编造」）、相关性 4.03→4.30；引用准确率 76.7% 仍低于 DeepSeek 97.7%，小数据量对「引用标得准不准」提升有限。
+4. **GGUF fp16 部署不损质量**：忠实度 90.4% / 相关性 4.43，均不低于基座 bf16（82.2% / 4.03）——「转换/量化不丢精度」成立；但作为基座它同样不产引用，部署端要带引用需走「LoRA 合并 → 导出 GGUF」。
+
+## 本地 GGUF 部署（`scripts/serve_local.bat`，llama.cpp）
+
+用 llama.cpp 把 Qwen2.5-1.5B 部署为本地 OpenAI 兼容服务，一键启动：
+
+```bat
+scripts\serve_local.bat   # 起 http://127.0.0.1:8080/v1，fp16 GGUF，全层 offload GPU
+```
+
+- **选型**：llama.cpp（Windows 友好、一条命令起）；模型用 **Qwen2.5-1.5B-Instruct GGUF fp16**（先不量化，消除「量化掉精度」的疑虑）。
+- **零改动接入**：llama-server 暴露 OpenAI 兼容端点，`LocalOpenAIClient` 复用 DeepSeek 协议封装，`llm_backend=local-http` 一键切换，业务代码不变。
+- **实测**：70 tok/s（GPU 显存带宽受限），29/29 层全 offload GPU。
+- **质量**：见上「四路对比」——忠实度 90.4% / 相关性 4.43，不损基座 bf16；但不产引用（基座天然行为）。部署端要带引用 → 走「LoRA 合并 → 导出 GGUF」（`llama-export-lora`）。
+
+复现：
+
+```bash
+D:/profession/venv/Scripts/python.exe scripts/eval_rag.py --backend local-http --out data/eval_results_local_http.json
+```
 
 ## 目录结构
 
@@ -91,10 +158,13 @@ rag_kb/
 │   ├── api.py                 # FastAPI：/health /ask /ask/stream
 │   ├── parsing/               # 多格式解析（注册式，get_parser 路由）
 │   ├── chunking/              # ParentChildChunker 父子分块
-│   └── retrieval/             # sparse / dense / milvus_index / hybrid / reranker
-├── scripts/                   # Day1 + Week1-4 逐周验证脚本
+│   ├── retrieval/             # sparse / dense / milvus_index / hybrid / reranker
+│   └── finetune/              # LoRA 微调：data（合成数据加载）+ train（手写训练循环）
+├── scripts/                   # Day1 + Week1-4 逐周验证脚本 + eval_ablation / eval_rag / eval_compare / train_lora / serve_local.bat
 ├── data/docs/                 # 待入库文档（PDF/DOCX/TXT/MD）
+├── data/eval_set.json         # 端到端评测集（30 条：query / 参考答案 / gold 父块）
 ├── requirements.txt
+├── PROCESS.md                 # 项目从 0 到 1 的完整实现过程（面试前通读）
 └── .env                       # API Key（已 gitignore）
 ```
 
@@ -141,7 +211,8 @@ python scripts/week3_test_rag.py          # 重排 + 带引用生成
 python scripts/week4_test_stream.py       # 流式 + trace
 python scripts/week4_test_api.py          # 服务端到端（需先起服务）
 python scripts/week5_test_milvus.py       # Milvus 后端对比
-python scripts/eval_ablation.py           # 量化评估 + 消融（Hit Rate@k）
+python scripts/eval_ablation.py           # 检索消融 + Hit Rate@k
+python scripts/eval_rag.py                # 端到端 LLM-as-judge 三指标 + Hit Rate
 ```
 
 ## 环境说明（D 盘 / 国内网络）

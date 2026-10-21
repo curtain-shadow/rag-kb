@@ -4,3 +4,10 @@ __pycache__/
 .env
 data/docs/
 data/index/
+data/lora_qwen_rag/
+data/sft_data.jsonl
+data/eval_results*.json
+data/eval_report*.txt
+data/eval_compare*.txt
+*.log
+data/_smoke*
